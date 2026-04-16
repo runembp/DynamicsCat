@@ -131,7 +131,7 @@
   const subheader = document.createElement('div');
   subheader.className = 'cfp-subheader';
   subheader.textContent = `Entity: ${entityName}  |  ID: ${entityId || '(new record)'}`;
-  panel.insertBefore(subheader, body);
+  panel.appendChild(subheader);
 
   // ── Build label map from controls (reuse from above) ─────────
   Xrm.Page.ui.controls.forEach((ctrl) => {
