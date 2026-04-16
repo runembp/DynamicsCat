@@ -1,16 +1,46 @@
 (function () {
   const PANEL_ID = 'crm-tools-fields-panel';
   const STYLE_ID = 'crm-tools-fields-style';
+  const LOG = (msg) => console.log('[CRM Tools]', msg);
+
+  LOG('show-fields.js running in: ' + window.location.href);
 
   // Toggle: remove panel if already open
   const existing = document.getElementById(PANEL_ID);
   if (existing) {
+    LOG('Panel already open — closing.');
     existing.remove();
     return;
   }
 
   // Xrm is only available in the CRM form iframe — silently skip other frames
-  if (typeof Xrm === 'undefined' || !Xrm.Page) return;
+  LOG('Xrm available: ' + (typeof Xrm !== 'undefined'));
+  if (typeof Xrm === 'undefined' || !Xrm.Page) {
+    LOG('Xrm.Page not found in this frame — skipping.');
+    return;
+  }
+
+  LOG('Xrm.Page found! Reading attributes…');
+
+  // ── Console output of all fields ─────────────────────────────
+  const attributes = Xrm.Page.data.entity.attributes.get();
+  const labelMap = {};
+  Xrm.Page.ui.controls.forEach((ctrl) => {
+    const name = ctrl.getName();
+    if (name) {
+      try { labelMap[name] = ctrl.getLabel() || name; } catch (e) { labelMap[name] = name; }
+    }
+  });
+
+  LOG(`Entity: ${Xrm.Page.data.entity.getEntityName()} — ${attributes.length} attribute(s)`);
+  attributes.forEach((attr) => {
+    const name  = attr.getName();
+    const type  = attr.getAttributeType ? attr.getAttributeType() : '?';
+    const label = labelMap[name] || name;
+    let val;
+    try { val = attr.getValue(); } catch (e) { val = '(error)'; }
+    console.log(`  [${type}] ${label} (${name}) =`, val);
+  });
 
   // ── Inject styles ─────────────────────────────────────────────
   if (!document.getElementById(STYLE_ID)) {
