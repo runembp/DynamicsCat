@@ -133,8 +133,7 @@
   subheader.textContent = `Entity: ${entityName}  |  ID: ${entityId || '(new record)'}`;
   panel.insertBefore(subheader, body);
 
-  // ── Build label map from controls ────────────────────────────
-  const labelMap = {};
+  // ── Build label map from controls (reuse from above) ─────────
   Xrm.Page.ui.controls.forEach((ctrl) => {
     const name = ctrl.getName();
     if (name) {
@@ -183,7 +182,6 @@
 
   const tbody = document.createElement('tbody');
 
-  const attributes = Xrm.Page.data.entity.attributes.get();
   attributes.forEach((attr) => {
     const name  = attr.getName();
     const label = labelMap[name] || name;
