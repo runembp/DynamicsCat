@@ -28,7 +28,12 @@
   3. `npm run clean && npm run build` produces a `dist/` folder with no orphan `show-fields.*` or `background.*` artifacts
   4. GitHub Actions CI passes green on every push and pull request, running `npm run check` automatically
   5. `manifest.json` includes an explicit `content_security_policy` in MV3 nested-object format and `popup.ts` DOM lookups use null guards instead of `!` assertions
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 01-PLAN-groundwork-ci.md — README overhaul, rimraf/clean setup, GitHub Actions CI (CLEN-01, CLEN-03, CI-01)
+- [ ] 01-PLAN-security-hardening.md — Null guards in popup.ts, MV3 CSP in manifest (SEC-01, SEC-02)
+- [ ] 01-PLAN-scaffold-removal.md — Remove hello-world scaffold, background.ts, dead CSS; wire lint into build (CLEN-02, CLEN-04, CLEN-05, CLEN-06)
 
 ### Phase 2: Content Script Hardening + Sort
 **Goal**: The All Fields panel gives clear feedback on non-CRM pages and provides interactive sorting and polished keyboard isolation
