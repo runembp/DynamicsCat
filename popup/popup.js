@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
       chrome.scripting.executeScript({
         target: { tabId: tab.id, allFrames: true },
         files: ['content/show-fields.js'],
+        world: 'MAIN',
       });
     });
   });
