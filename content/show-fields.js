@@ -33,12 +33,8 @@
   const body = document.createElement('div');
   body.className = 'cfp-body';
 
-  if (typeof Xrm === 'undefined' || !Xrm.Page) {
-    body.innerHTML = '<div class="cfp-error">⚠️ Xrm is not available on this page.<br>Navigate to a Dynamics CRM entity form and try again.</div>';
-    panel.appendChild(body);
-    document.body.appendChild(panel);
-    return;
-  }
+  // Xrm is only available in the CRM form iframe — silently skip other frames
+  if (typeof Xrm === 'undefined' || !Xrm.Page) return;
 
   // ── Entity info subheader ─────────────────────────────────────
   const entityName = Xrm.Page.data.entity.getEntityName();
