@@ -86,4 +86,4 @@
 
 ---
 *Requirements defined: 2026-04-16*
-*Last updated: 2026-04-16 after initial definition*
+*Last updated: 2026-04-16 — traceability confirmed against ROADMAP.md (16/16 mapped, 0 orphans)*
