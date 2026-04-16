@@ -1,9 +1,12 @@
-(function () {
-  const PANEL_ID = 'crm-tools-fields-panel';
-  const STYLE_ID = 'crm-tools-fields-style';
-  const LOG = (msg) => console.log('[CRM Tools]', msg);
+// Injected into CRM form frames via chrome.scripting.executeScript.
+// Reads all Xrm attributes and renders a side-panel with a sortable table.
 
-  LOG('show-fields.js running in: ' + window.location.href);
+const PANEL_ID = 'crm-tools-fields-panel';
+const STYLE_ID = 'crm-tools-fields-style';
+const LOG = (msg: string) => console.log('[CRM Tools]', msg);
+
+function main(): void {
+  LOG('all-fields.ts running in: ' + window.location.href);
 
   // Toggle: remove panel if already open
   const existing = document.getElementById(PANEL_ID);
@@ -22,13 +25,18 @@
 
   LOG('Xrm.Page found! Reading attributes…');
 
-  // ── Console output of all fields ─────────────────────────────
   const attributes = Xrm.Page.data.entity.attributes.get();
-  const labelMap = {};
+
+  // Build label map from UI controls
+  const labelMap: Record<string, string> = {};
   Xrm.Page.ui.controls.forEach((ctrl) => {
     const name = ctrl.getName();
     if (name) {
-      try { labelMap[name] = ctrl.getLabel() || name; } catch (e) { labelMap[name] = name; }
+      try {
+        labelMap[name] = (ctrl as Xrm.Controls.StandardControl).getLabel() || name;
+      } catch {
+        labelMap[name] = name;
+      }
     }
   });
 
@@ -37,16 +45,20 @@
     const name  = attr.getName();
     const type  = attr.getAttributeType ? attr.getAttributeType() : '?';
     const label = labelMap[name] || name;
-    let val;
-    try { val = attr.getValue(); } catch (e) { val = '(error)'; }
+    let val: unknown;
+    try { val = attr.getValue(); } catch { val = '(error)'; }
     console.log(`  [${type}] ${label} (${name}) =`, val);
   });
 
-  // ── Inject styles ─────────────────────────────────────────────
-  if (!document.getElementById(STYLE_ID)) {
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = `
+  injectStyles();
+  buildPanel(attributes, labelMap);
+}
+
+function injectStyles(): void {
+  if (document.getElementById(STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = STYLE_ID;
+  style.textContent = `
 #crm-tools-fields-panel {
   position: fixed; top: 0; right: 0; width: 580px; height: 100vh;
   background: #fff; border-left: 2px solid #1e64c8;
@@ -94,15 +106,49 @@
   font-size: 11px; background: #e8e8e8; color: #444;
 }
 #crm-tools-fields-panel .cfp-null { color: #aaa; font-style: italic; }
-    `;
-    document.head.appendChild(style);
-  }
+  `;
+  document.head.appendChild(style);
+}
 
-  // ── Build panel ───────────────────────────────────────────────
+function formatValue(attr: Xrm.Attributes.Attribute): string | null {
+  try {
+    const val = attr.getValue() as unknown;
+    if (val === null || val === undefined) return null;
+
+    const type = attr.getAttributeType ? attr.getAttributeType() : typeof val;
+
+    switch (type) {
+      case 'lookup': {
+        if (!Array.isArray(val)) return String(val);
+        return (val as Xrm.LookupValue[]).map((v) => v.name || v.id).join(', ');
+      }
+      case 'optionset':
+      case 'multiselectoptionset': {
+        const text = (attr as Xrm.Attributes.OptionSetAttribute).getText?.();
+        return text != null ? String(text) : String(val);
+      }
+      case 'datetime': {
+        return val instanceof Date ? val.toLocaleString() : String(val);
+      }
+      case 'boolean': {
+        return val ? 'Yes' : 'No';
+      }
+      default:
+        return String(val);
+    }
+  } catch {
+    return '(error reading value)';
+  }
+}
+
+function buildPanel(
+  attributes: Xrm.Attributes.Attribute[],
+  labelMap: Record<string, string>,
+): void {
   const panel = document.createElement('div');
   panel.id = PANEL_ID;
 
-  // ── Header ────────────────────────────────────────────────────
+  // Header
   const header = document.createElement('div');
   header.className = 'cfp-header';
 
@@ -120,11 +166,7 @@
   header.appendChild(closeBtn);
   panel.appendChild(header);
 
-  // ── Body ──────────────────────────────────────────────────────
-  const body = document.createElement('div');
-  body.className = 'cfp-body';
-
-  // ── Entity info subheader ─────────────────────────────────────
+  // Entity info subheader
   const entityName = Xrm.Page.data.entity.getEntityName();
   const entityId   = Xrm.Page.data.entity.getId();
 
@@ -133,59 +175,20 @@
   subheader.textContent = `Entity: ${entityName}  |  ID: ${entityId || '(new record)'}`;
   panel.appendChild(subheader);
 
-  // ── Build label map from controls (reuse from above) ─────────
-  Xrm.Page.ui.controls.forEach((ctrl) => {
-    const name = ctrl.getName();
-    if (name) {
-      try { labelMap[name] = ctrl.getLabel() || name; } catch (e) { labelMap[name] = name; }
-    }
-  });
+  // Scrollable body with table
+  const body = document.createElement('div');
+  body.className = 'cfp-body';
 
-  // ── Format value by attribute type ───────────────────────────
-  function formatValue(attr) {
-    try {
-      const val = attr.getValue();
-      if (val === null || val === undefined) return null;
-
-      const type = attr.getAttributeType ? attr.getAttributeType() : typeof val;
-
-      switch (type) {
-        case 'lookup': {
-          if (!Array.isArray(val)) return String(val);
-          return val.map((v) => v.name || v.id).join(', ');
-        }
-        case 'optionset':
-        case 'multiselectoptionset': {
-          const text = attr.getText ? attr.getText() : null;
-          return text !== null && text !== undefined ? String(text) : String(val);
-        }
-        case 'datetime': {
-          return val instanceof Date ? val.toLocaleString() : String(val);
-        }
-        case 'boolean': {
-          return val ? 'Yes' : 'No';
-        }
-        default:
-          return String(val);
-      }
-    } catch (e) {
-      return '(error reading value)';
-    }
-  }
-
-  // ── Build table ───────────────────────────────────────────────
   const table = document.createElement('table');
-
   const thead = document.createElement('thead');
   thead.innerHTML = '<tr><th>Label</th><th>Schema Name</th><th>Type</th><th>Value</th></tr>';
   table.appendChild(thead);
 
   const tbody = document.createElement('tbody');
-
   attributes.forEach((attr) => {
-    const name  = attr.getName();
-    const label = labelMap[name] || name;
-    const type  = attr.getAttributeType ? attr.getAttributeType() : '—';
+    const name     = attr.getName();
+    const label    = labelMap[name] || name;
+    const type     = attr.getAttributeType ? attr.getAttributeType() : '—';
     const rawValue = formatValue(attr);
 
     const tr = document.createElement('tr');
@@ -223,4 +226,6 @@
   body.appendChild(table);
   panel.appendChild(body);
   document.body.appendChild(panel);
-})();
+}
+
+main();

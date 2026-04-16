@@ -1,0 +1,25 @@
+{
+  "name": "crm-chrome-tools",
+  "version": "0.1.0",
+  "description": "Dynamics CRM 2016 helper tools Chrome extension",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.js",
+    "dev": "node build.js --dev",
+    "watch": "node build.js --watch",
+    "typecheck": "tsc",
+    "lint": "eslint src/",
+    "check": "npm run typecheck && npm run lint"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/chrome": "^0.0.268",
+    "@types/xrm": "^9.0.85",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}
