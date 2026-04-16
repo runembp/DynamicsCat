@@ -1,5 +1,6 @@
 (function () {
   const PANEL_ID = 'crm-tools-fields-panel';
+  const STYLE_ID = 'crm-tools-fields-style';
 
   // Toggle: remove panel if already open
   const existing = document.getElementById(PANEL_ID);
@@ -8,6 +9,66 @@
     return;
   }
 
+  // Xrm is only available in the CRM form iframe — silently skip other frames
+  if (typeof Xrm === 'undefined' || !Xrm.Page) return;
+
+  // ── Inject styles ─────────────────────────────────────────────
+  if (!document.getElementById(STYLE_ID)) {
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = `
+#crm-tools-fields-panel {
+  position: fixed; top: 0; right: 0; width: 580px; height: 100vh;
+  background: #fff; border-left: 2px solid #1e64c8;
+  box-shadow: -4px 0 16px rgba(0,0,0,0.18);
+  z-index: 2147483647; display: flex; flex-direction: column;
+  font-family: Segoe UI, Arial, sans-serif; font-size: 13px; color: #222;
+}
+#crm-tools-fields-panel .cfp-header {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #1e64c8; color: #fff; padding: 10px 14px; flex-shrink: 0;
+}
+#crm-tools-fields-panel .cfp-header-title { font-size: 14px; font-weight: 600; }
+#crm-tools-fields-panel .cfp-close {
+  background: none; border: none; color: #fff; font-size: 18px;
+  line-height: 1; cursor: pointer; padding: 0 2px; opacity: 0.85;
+}
+#crm-tools-fields-panel .cfp-close:hover { opacity: 1; }
+#crm-tools-fields-panel .cfp-subheader {
+  padding: 6px 14px; background: #e8f0fe; font-size: 12px;
+  color: #1e64c8; border-bottom: 1px solid #c5d8fb; flex-shrink: 0;
+}
+#crm-tools-fields-panel .cfp-body { overflow-y: auto; flex: 1; }
+#crm-tools-fields-panel table { width: 100%; border-collapse: collapse; }
+#crm-tools-fields-panel thead th {
+  position: sticky; top: 0; background: #f0f4ff;
+  border-bottom: 2px solid #1e64c8; padding: 7px 10px; text-align: left;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.4px; color: #444; white-space: nowrap;
+}
+#crm-tools-fields-panel tbody tr:nth-child(even) { background: #f8f9ff; }
+#crm-tools-fields-panel tbody tr:hover { background: #dceafe; }
+#crm-tools-fields-panel td {
+  padding: 5px 10px; border-bottom: 1px solid #e8e8e8;
+  vertical-align: top; word-break: break-word;
+}
+#crm-tools-fields-panel td:nth-child(1), #crm-tools-fields-panel th:nth-child(1) { width: 26%; }
+#crm-tools-fields-panel td:nth-child(2), #crm-tools-fields-panel th:nth-child(2) { width: 26%; }
+#crm-tools-fields-panel td:nth-child(3), #crm-tools-fields-panel th:nth-child(3) { width: 14%; }
+#crm-tools-fields-panel td:nth-child(4), #crm-tools-fields-panel th:nth-child(4) { width: 34%; }
+#crm-tools-fields-panel td:nth-child(2) {
+  font-family: Consolas, monospace; font-size: 12px; color: #555;
+}
+#crm-tools-fields-panel .cfp-type {
+  display: inline-block; padding: 1px 6px; border-radius: 10px;
+  font-size: 11px; background: #e8e8e8; color: #444;
+}
+#crm-tools-fields-panel .cfp-null { color: #aaa; font-style: italic; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // ── Build panel ───────────────────────────────────────────────
   const panel = document.createElement('div');
   panel.id = PANEL_ID;
 
@@ -32,9 +93,6 @@
   // ── Body ──────────────────────────────────────────────────────
   const body = document.createElement('div');
   body.className = 'cfp-body';
-
-  // Xrm is only available in the CRM form iframe — silently skip other frames
-  if (typeof Xrm === 'undefined' || !Xrm.Page) return;
 
   // ── Entity info subheader ─────────────────────────────────────
   const entityName = Xrm.Page.data.entity.getEntityName();
