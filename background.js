@@ -1,6 +1,1 @@
-chrome.action.onClicked.addListener((tab) => {
-  chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: () => alert('Hello world'),
-  });
-});
+// Service worker placeholder — action click is handled by popup/popup.js
