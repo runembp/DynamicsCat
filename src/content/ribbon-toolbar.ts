@@ -1,5 +1,6 @@
 // DOM-injection toolbar for CRM pages (ISOLATED world).
-// Injects a "C" toggle button at the far left of the CRM masthead nav.
+// Injects a "C" toggle button at the far left of #navBar (the CRM masthead nav bar),
+// mirroring the crm-power-pane-button structure.
 // Does NOT touch Xrm — delegates actions to background via sendMessage.
 
 const TOOLBAR_ID = 'crm-tools-ribbon-toolbar';
@@ -121,18 +122,13 @@ function buildToolbar(): void {
     }
   });
 
-  // --- Inject into #crmMasthead, or fall back to #navBar, then body ---
-  const masthead = document.getElementById('crmMasthead');
-  if (masthead) {
-    masthead.prepend(wrapper);
+  // --- Inject into #navBar (where crm-power-pane-button lives), fall back to body ---
+  const navBar = document.getElementById('navBar');
+  if (navBar) {
+    navBar.prepend(wrapper);
   } else {
-    const navBar = document.getElementById('navBar');
-    if (navBar) {
-      navBar.prepend(wrapper);
-    } else {
-      wrapper.classList.add('crt-fallback');
-      document.body.prepend(wrapper);
-    }
+    wrapper.classList.add('crt-fallback');
+    document.body.prepend(wrapper);
   }
 }
 
