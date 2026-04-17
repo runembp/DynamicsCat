@@ -14,5 +14,11 @@ chrome.runtime.onMessage.addListener((message, sender, _sendResponse) => {
       files: ['content/option-sets.js'],
       world: 'MAIN',
     });
+  } else if (message.action === 'injectShowHiddenFields') {
+    chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ['content/show-hidden-fields.js'],
+      world: 'MAIN',
+    });
   }
 });

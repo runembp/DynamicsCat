@@ -98,6 +98,16 @@ function buildToolbar(): void {
   dropdown.appendChild(allFieldsBtn);
   dropdown.appendChild(optionSetsBtn);
 
+  const showHiddenBtn = document.createElement('button');
+  showHiddenBtn.className = 'crt-dropdown-btn';
+  showHiddenBtn.textContent = '👁 Show Hidden Fields';
+  showHiddenBtn.addEventListener('click', () => {
+    dropdown.style.display = 'none';
+    chrome.runtime.sendMessage({ action: 'injectShowHiddenFields' });
+  });
+
+  dropdown.appendChild(showHiddenBtn);
+
   // Append dropdown to body so it escapes the ribbon's stacking context
   document.body.appendChild(dropdown);
 

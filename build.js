@@ -12,6 +12,7 @@ const options = {
     'popup/popup': 'src/popup/popup.ts',
     'content/all-fields': 'src/content/all-fields.ts',
     'content/option-sets': 'src/content/option-sets.ts',
+    'content/show-hidden-fields': 'src/content/show-hidden-fields.ts',
     'content/ribbon-toolbar': 'src/content/ribbon-toolbar.ts',
   },
   bundle: true,
@@ -32,6 +33,7 @@ function copyStatics() {
   copyFileSync('src/popup/popup.css', 'dist/popup/popup.css');
   copyFileSync('src/content/all-fields.css', 'dist/content/all-fields.css');
   copyFileSync('src/content/option-sets.css', 'dist/content/option-sets.css');
+  copyFileSync('src/content/show-hidden-fields.css', 'dist/content/show-hidden-fields.css');
 }
 
 /** Run ESLint over src/ and print any findings. */

@@ -18,4 +18,14 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   });
+
+  document.getElementById('btn-show-hidden-fields')!.addEventListener('click', () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+      chrome.scripting.executeScript({
+        target: { tabId: tab.id!, allFrames: true },
+        files: ['content/show-hidden-fields.js'],
+        world: 'MAIN',
+      });
+    });
+  });
 });
