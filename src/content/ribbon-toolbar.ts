@@ -1,124 +1,85 @@
 // DOM-injection toolbar for CRM pages (ISOLATED world).
-// Injects a "C" toggle button at the far left of the CRM ribbon.
+// Injects a "C" toggle button at the far left of the CRM masthead nav.
 // Does NOT touch Xrm — delegates actions to background via sendMessage.
 
 const TOOLBAR_ID = 'crm-tools-ribbon-toolbar';
 const STYLE_ID   = 'crm-tools-ribbon-style';
-
-const RIBBON_SELECTORS = [
-  '#RibbonContainer',
-  '#crmRibbonManager',
-  '.ms-crm-commandBar',
-  '#CommandBarContainer',
-  '#navBar',
-  'nav[role="navigation"]',
-] as const;
+const DROPDOWN_ID = 'crm-tools-ribbon-dropdown';
 
 function injectStyles(): void {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement('style');
   style.id = STYLE_ID;
   style.textContent = `
-#crm-tools-ribbon-toolbar {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  font-family: Segoe UI, Arial, sans-serif;
-  user-select: none;
+#crm-tools-ribbon-toolbar .navTabButtonLink { cursor: pointer; text-decoration: none; }
+#crm-tools-ribbon-toolbar .crt-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  background: #1e64c8; color: #fff;
+  font-size: 14px; font-weight: 700;
+  border-radius: 3px; font-family: Segoe UI, Arial, sans-serif;
 }
-#crm-tools-ribbon-toolbar.crt-fallback {
-  position: fixed;
-  top: 6px;
-  left: 6px;
-  z-index: 2147483647;
+.crt-dropdown-btn {
+  display: block; width: 100%; padding: 6px 12px;
+  background: transparent; border: none; border-radius: 3px;
+  color: #fff; font-size: 13px; font-family: Segoe UI, Arial, sans-serif;
+  cursor: pointer; text-align: left; white-space: nowrap;
 }
-#crm-tools-ribbon-toolbar .crt-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: #1e64c8;
-  color: #fff;
-  font-size: 18px;
-  font-weight: 700;
-  border: none;
-  cursor: pointer;
-  border-radius: 3px;
-  flex-shrink: 0;
-}
-#crm-tools-ribbon-toolbar .crt-toggle:hover {
-  background: #174fa0;
-}
-#crm-tools-ribbon-toolbar .crt-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 2147483647;
-  background: #1e64c8;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  padding: 4px;
-  min-width: 150px;
-  display: none;
-}
-#crm-tools-ribbon-toolbar .crt-btn {
-  display: block;
-  width: 100%;
-  margin-top: 4px;
-  padding: 5px 10px;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.3);
-  border-radius: 4px;
-  color: #fff;
-  font-size: 12px;
-  font-family: Segoe UI, Arial, sans-serif;
-  cursor: pointer;
-  text-align: left;
-  white-space: nowrap;
-  transition: background 0.15s;
-  box-sizing: border-box;
-}
-#crm-tools-ribbon-toolbar .crt-btn:first-child {
-  margin-top: 0;
-}
-#crm-tools-ribbon-toolbar .crt-btn:hover {
-  background: rgba(255,255,255,0.28);
-}
+.crt-dropdown-btn:hover { background: rgba(255,255,255,0.2); }
+.crt-fallback { position: fixed !important; top: 6px; left: 6px; z-index: 2147483646; }
   `;
   (document.head || document.documentElement).appendChild(style);
-}
-
-function findRibbonContainer(): Element | null {
-  for (const selector of RIBBON_SELECTORS) {
-    const el = document.querySelector(selector);
-    if (el) return el;
-  }
-  return null;
 }
 
 function buildToolbar(): void {
   // Idempotent: skip if already injected (e.g. soft navigation without full page unload)
   if (document.getElementById(TOOLBAR_ID)) return;
 
+  // Clean up any detached dropdown from a previous injection
+  const staleDropdown = document.getElementById(DROPDOWN_ID);
+  if (staleDropdown) staleDropdown.remove();
+
   injectStyles();
 
-  // --- Wrapper ---
-  const wrapper = document.createElement('div');
+  // --- Wrapper: mirrors <span class="navTabButton"> structure ---
+  const wrapper = document.createElement('span');
+  wrapper.className = 'navTabButton';
   wrapper.id = TOOLBAR_ID;
+  wrapper.title = 'CRM Tools';
 
-  // --- Toggle "C" button ---
-  const toggle = document.createElement('button');
-  toggle.className = 'crt-toggle';
-  toggle.textContent = 'C';
-  toggle.title = 'CRM Tools';
+  const link = document.createElement('a');
+  link.className = 'navTabButtonLink';
+  link.role = 'button';
+  link.tabIndex = 0;
+  link.title = '';
 
-  // --- Dropdown panel ---
+  const imgContainer = document.createElement('span');
+  imgContainer.className = 'navTabButtonImageContainer';
+
+  const icon = document.createElement('span');
+  icon.className = 'crt-icon';
+  icon.textContent = 'C';
+
+  imgContainer.appendChild(icon);
+  link.appendChild(imgContainer);
+  wrapper.appendChild(link);
+
+  // --- Dropdown panel — appended to document.body for z-index escape ---
   const dropdown = document.createElement('div');
-  dropdown.className = 'crt-dropdown';
+  dropdown.id = DROPDOWN_ID;
+  dropdown.style.cssText = [
+    'position: fixed',
+    'z-index: 2147483647',
+    'background: #1e64c8',
+    'border-radius: 4px',
+    'box-shadow: 0 4px 12px rgba(0,0,0,0.3)',
+    'padding: 4px',
+    'min-width: 160px',
+    'display: none',
+  ].join('; ');
 
   const allFieldsBtn = document.createElement('button');
-  allFieldsBtn.className = 'crt-btn';
+  allFieldsBtn.className = 'crt-dropdown-btn';
   allFieldsBtn.textContent = '📋 All Fields';
   allFieldsBtn.addEventListener('click', () => {
     dropdown.style.display = 'none';
@@ -126,7 +87,7 @@ function buildToolbar(): void {
   });
 
   const optionSetsBtn = document.createElement('button');
-  optionSetsBtn.className = 'crt-btn';
+  optionSetsBtn.className = 'crt-dropdown-btn';
   optionSetsBtn.textContent = '🔘 Option Sets';
   optionSetsBtn.addEventListener('click', () => {
     dropdown.style.display = 'none';
@@ -136,29 +97,42 @@ function buildToolbar(): void {
   dropdown.appendChild(allFieldsBtn);
   dropdown.appendChild(optionSetsBtn);
 
+  // Append dropdown to body so it escapes the ribbon's stacking context
+  document.body.appendChild(dropdown);
+
   // --- Toggle click handler ---
-  toggle.addEventListener('click', (e) => {
+  wrapper.addEventListener('click', (e) => {
     e.stopPropagation();
-    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    if (dropdown.style.display === 'block') {
+      dropdown.style.display = 'none';
+    } else {
+      // Recalculate position each time in case page has scrolled
+      const rect = wrapper.getBoundingClientRect();
+      dropdown.style.top  = rect.bottom + 'px';
+      dropdown.style.left = rect.left + 'px';
+      dropdown.style.display = 'block';
+    }
   });
 
   // --- Click-outside handler ---
-  document.addEventListener('click', (e) => {
-    if (!wrapper.contains(e.target as Node)) {
+  document.addEventListener('click', (e: MouseEvent) => {
+    if (!wrapper.contains(e.target as Node) && !dropdown.contains(e.target as Node)) {
       dropdown.style.display = 'none';
     }
   });
 
-  wrapper.appendChild(toggle);
-  wrapper.appendChild(dropdown);
-
-  // --- Inject into ribbon or fall back to body ---
-  const ribbonContainer = findRibbonContainer();
-  if (ribbonContainer) {
-    ribbonContainer.prepend(wrapper);
+  // --- Inject into #crmMasthead, or fall back to #navBar, then body ---
+  const masthead = document.getElementById('crmMasthead');
+  if (masthead) {
+    masthead.prepend(wrapper);
   } else {
-    wrapper.classList.add('crt-fallback');
-    document.body.prepend(wrapper);
+    const navBar = document.getElementById('navBar');
+    if (navBar) {
+      navBar.prepend(wrapper);
+    } else {
+      wrapper.classList.add('crt-fallback');
+      document.body.prepend(wrapper);
+    }
   }
 }
 
