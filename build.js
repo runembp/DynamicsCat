@@ -12,6 +12,7 @@ const options = {
     'popup/popup': 'src/popup/popup.ts',
     'content/all-fields': 'src/content/all-fields.ts',
     'content/option-sets': 'src/content/option-sets.ts',
+    'content/ribbon-toolbar': 'src/content/ribbon-toolbar.ts',
   },
   bundle: true,
   outdir: 'dist',
