@@ -1,4 +1,4 @@
-# CRM Chrome Tools
+# MojnTools
 
 A Chrome Extension for Dynamics CRM 2016 — helper tools for form field inspection, form manipulation, and more.
 

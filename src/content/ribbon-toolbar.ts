@@ -46,7 +46,7 @@ function buildToolbar(): void {
   const wrapper = document.createElement('span');
   wrapper.className = 'navTabButton';
   wrapper.id = TOOLBAR_ID;
-  wrapper.title = 'CRM Tools';
+  wrapper.title = 'MojnTools';
 
   const link = document.createElement('a');
   link.className = 'navTabButtonLink';

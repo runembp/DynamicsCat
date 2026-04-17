@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "CRM Chrome Tools",
+  "name": "MojnTools",
   "version": "0.1.0",
-  "description": "Dynamics CRM 2016 helper tools — form field viewer, form manipulation, and more.",
+  "description": "MojnTools — Dynamics CRM 2016 helper tools for form field inspection and more.",
   "permissions": [
     "activeTab",
     "scripting"
@@ -14,7 +14,7 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "CRM Chrome Tools",
+    "default_title": "MojnTools",
     "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "icons/icon16.png",

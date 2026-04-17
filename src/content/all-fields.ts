@@ -5,7 +5,7 @@ export {};
 
 const PANEL_ID= 'crm-tools-fields-panel';
 const STYLE_ID = 'crm-tools-fields-style';
-const LOG = (msg: string) => console.log('[CRM Tools]', msg);
+const LOG = (msg: string) => console.log('[MojnTools]', msg);
 
 function main(): void {
   LOG('all-fields.ts running in: ' + window.location.href);
