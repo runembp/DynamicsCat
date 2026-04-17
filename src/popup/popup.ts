@@ -17,4 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   });
+
+  document.getElementById('btn-show-option-sets')!.addEventListener('click', () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+      chrome.scripting.executeScript({
+        target: { tabId: tab.id!, allFrames: true },
+        files: ['content/option-sets.js'],
+        world: 'MAIN',
+      });
+    });
+  });
 });

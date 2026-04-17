@@ -1,7 +1,9 @@
 // Injected into CRM form frames via chrome.scripting.executeScript.
 // Reads all Xrm attributes and renders a side-panel with a sortable table.
 
-const PANEL_ID = 'crm-tools-fields-panel';
+export {};
+
+const PANEL_ID= 'crm-tools-fields-panel';
 const STYLE_ID = 'crm-tools-fields-style';
 const LOG = (msg: string) => console.log('[CRM Tools]', msg);
 
@@ -60,7 +62,7 @@ function injectStyles(): void {
   style.id = STYLE_ID;
   style.textContent = `
 #crm-tools-fields-panel {
-  position: fixed; top: 0; right: 0; width: 580px; height: 100vh;
+  position: fixed; top: 0; right: 0; width: auto; min-width: 420px; max-width: 90vw; height: 100vh;
   background: #fff; border-left: 2px solid #1e64c8;
   box-shadow: -4px 0 16px rgba(0,0,0,0.18);
   z-index: 2147483647; display: flex; flex-direction: column;
@@ -80,8 +82,8 @@ function injectStyles(): void {
   padding: 6px 14px; background: #e8f0fe; font-size: 12px;
   color: #1e64c8; border-bottom: 1px solid #c5d8fb; flex-shrink: 0;
 }
-#crm-tools-fields-panel .cfp-body { overflow-y: auto; flex: 1; }
-#crm-tools-fields-panel table { width: 100%; border-collapse: collapse; }
+#crm-tools-fields-panel .cfp-body { overflow-y: auto; overflow-x: auto; flex: 1; }
+#crm-tools-fields-panel table { border-collapse: collapse; }
 #crm-tools-fields-panel thead th {
   position: sticky; top: 0; background: #f0f4ff;
   border-bottom: 2px solid #1e64c8; padding: 7px 10px; text-align: left;
@@ -91,13 +93,12 @@ function injectStyles(): void {
 #crm-tools-fields-panel tbody tr:nth-child(even) { background: #f8f9ff; }
 #crm-tools-fields-panel tbody tr:hover { background: #dceafe; }
 #crm-tools-fields-panel td {
-  padding: 5px 10px; border-bottom: 1px solid #e8e8e8;
-  vertical-align: top; word-break: break-word;
+  padding: 5px 10px; border-bottom: 1px solid #e8e8e8; vertical-align: top;
 }
-#crm-tools-fields-panel td:nth-child(1), #crm-tools-fields-panel th:nth-child(1) { width: 26%; }
-#crm-tools-fields-panel td:nth-child(2), #crm-tools-fields-panel th:nth-child(2) { width: 26%; }
-#crm-tools-fields-panel td:nth-child(3), #crm-tools-fields-panel th:nth-child(3) { width: 14%; }
-#crm-tools-fields-panel td:nth-child(4), #crm-tools-fields-panel th:nth-child(4) { width: 34%; }
+#crm-tools-fields-panel td:nth-child(1), #crm-tools-fields-panel th:nth-child(1) { white-space: nowrap; }
+#crm-tools-fields-panel td:nth-child(2), #crm-tools-fields-panel th:nth-child(2) { white-space: nowrap; }
+#crm-tools-fields-panel td:nth-child(3), #crm-tools-fields-panel th:nth-child(3) { white-space: nowrap; }
+#crm-tools-fields-panel td:nth-child(4), #crm-tools-fields-panel th:nth-child(4) { min-width: 180px; max-width: 360px; word-break: break-word; }
 #crm-tools-fields-panel td:nth-child(2) {
   font-family: Consolas, monospace; font-size: 12px; color: #555;
 }
@@ -106,6 +107,19 @@ function injectStyles(): void {
   font-size: 11px; background: #e8e8e8; color: #444;
 }
 #crm-tools-fields-panel .cfp-null { color: #aaa; font-style: italic; }
+#crm-tools-fields-panel .cfp-search {
+  padding: 8px 14px; background: #fff; border-bottom: 1px solid #c5d8fb;
+  flex-shrink: 0;
+}
+#crm-tools-fields-panel .cfp-search input {
+  width: 100%; box-sizing: border-box; padding: 5px 10px;
+  border: 1px solid #c5d8fb; border-radius: 4px; font-size: 13px;
+  font-family: Segoe UI, Arial, sans-serif; color: #222; outline: none;
+}
+#crm-tools-fields-panel .cfp-search input:focus { border-color: #1e64c8; }
+#crm-tools-fields-panel .cfp-no-results {
+  padding: 16px; text-align: center; color: #888; font-style: italic;
+}
   `;
   document.head.appendChild(style);
 }
@@ -175,6 +189,18 @@ function buildPanel(
   subheader.textContent = `Entity: ${entityName}  |  ID: ${entityId || '(new record)'}`;
   panel.appendChild(subheader);
 
+  // Search bar
+  const searchContainer = document.createElement('div');
+  searchContainer.className = 'cfp-search';
+  const searchInput = document.createElement('input');
+  searchInput.type = 'search';
+  searchInput.placeholder = 'Search by label, schema name or value…';
+  // Prevent the host CRM page from swallowing keyboard events inside the panel
+  searchInput.addEventListener('keydown', (e) => e.stopPropagation());
+  searchInput.addEventListener('keyup', (e) => e.stopPropagation());
+  searchContainer.appendChild(searchInput);
+  panel.appendChild(searchContainer);
+
   // Scrollable body with table
   const body = document.createElement('div');
   body.className = 'cfp-body';
@@ -185,7 +211,12 @@ function buildPanel(
   table.appendChild(thead);
 
   const tbody = document.createElement('tbody');
-  attributes.forEach((attr) => {
+  const sortedAttrs = [...attributes].sort((a, b) => {
+    const la = (labelMap[a.getName()] || a.getName()).toLowerCase();
+    const lb = (labelMap[b.getName()] || b.getName()).toLowerCase();
+    return la.localeCompare(lb);
+  });
+  sortedAttrs.forEach((attr) => {
     const name     = attr.getName();
     const label    = labelMap[name] || name;
     const type     = attr.getAttributeType ? attr.getAttributeType() : '—';
@@ -215,6 +246,9 @@ function buildPanel(
       tdValue.textContent = rawValue;
     }
 
+    tr.dataset.searchLabel  = label.toLowerCase();
+    tr.dataset.searchSchema = name.toLowerCase();
+    tr.dataset.searchValue  = (rawValue ?? 'null').toLowerCase();
     tr.appendChild(tdLabel);
     tr.appendChild(tdSchema);
     tr.appendChild(tdType);
@@ -223,9 +257,36 @@ function buildPanel(
   });
 
   table.appendChild(tbody);
+
+  const noResults = document.createElement('div');
+  noResults.className = 'cfp-no-results';
+  noResults.textContent = 'No matching fields.';
+  noResults.style.display = 'none';
+
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase().trim();
+    let visible = 0;
+    tbody.querySelectorAll<HTMLTableRowElement>('tr').forEach((row) => {
+      const match = !q
+        || row.dataset.searchLabel!.includes(q)
+        || row.dataset.searchSchema!.includes(q)
+        || row.dataset.searchValue!.includes(q);
+      row.style.display = match ? '' : 'none';
+      if (match) visible++;
+    });
+    noResults.style.display = visible === 0 ? '' : 'none';
+  });
+
   body.appendChild(table);
+  body.appendChild(noResults);
   panel.appendChild(body);
   document.body.appendChild(panel);
+
+  // Size the panel to fit the table's natural width after it's in the DOM
+  requestAnimationFrame(() => {
+    const tableWidth = table.offsetWidth;
+    panel.style.width = Math.min(Math.max(tableWidth, 420), window.innerWidth * 0.9) + 'px';
+  });
 }
 
 main();
