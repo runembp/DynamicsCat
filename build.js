@@ -10,7 +10,6 @@ const options = {
   entryPoints: {
     'background': 'src/background.ts',
     'popup/popup': 'src/popup/popup.ts',
-    'content/hello-world': 'src/content/hello-world.ts',
     'content/all-fields': 'src/content/all-fields.ts',
     'content/option-sets': 'src/content/option-sets.ts',
   },
