@@ -79,6 +79,7 @@ None.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 1 | Add Show Option Sets tool to extension popup | 2026-04-17 | 905c8fd | .planning/quick/260417-bgl-add-show-option-sets-tool-to-crm-chrome- |
+| 2 | Auto-injected CRM ribbon toolbar + remove Hello World | 2026-04-17 | d5029cb | .planning/quick/260417-c2p-inject-crm-ribbon-toolbar-with-all-field |
 
 ---
 
