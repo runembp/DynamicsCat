@@ -13,13 +13,6 @@ function injectStyles(): void {
   style.id = STYLE_ID;
   style.textContent = `
 #crm-tools-ribbon-toolbar .navTabButtonLink { cursor: pointer; text-decoration: none; }
-#crm-tools-ribbon-toolbar .crt-icon {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px;
-  background: #1e64c8; color: #fff;
-  font-size: 14px; font-weight: 700;
-  border-radius: 3px; font-family: Segoe UI, Arial, sans-serif;
-}
 .crt-dropdown-btn {
   display: block; width: 100%; padding: 6px 12px;
   background: transparent; border: none; border-radius: 3px;
@@ -57,9 +50,10 @@ function buildToolbar(): void {
   const imgContainer = document.createElement('span');
   imgContainer.className = 'navTabButtonImageContainer';
 
-  const icon = document.createElement('span');
-  icon.className = 'crt-icon';
-  icon.textContent = 'C';
+  const icon = document.createElement('img');
+  icon.src = chrome.runtime.getURL('icons/icon32.png');
+  icon.alt = 'MojnTools';
+  icon.style.cssText = 'width:24px;height:24px;display:block;';
 
   imgContainer.appendChild(icon);
   link.appendChild(imgContainer);
