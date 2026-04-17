@@ -1,7 +1,12 @@
-// One-shot content script: reveals all hidden controls on the CRM form.
+// Toggle content script: reveals all hidden controls on the CRM form, or hides them again.
+// Uses window.__mojnRevealedFields to track revealed fields between injections.
 // Injected via chrome.scripting.executeScript with allFrames: true, world: 'MAIN'.
 
 export {};
+
+declare global {
+  interface Window { __mojnRevealedFields?: string[]; }
+}
 
 const STYLE_ID = 'crm-tools-show-hidden-style';
 const TOAST_ID = 'crm-tools-show-hidden-toast';
@@ -60,26 +65,43 @@ function main(): void {
   // Silently skip frames that don't have Xrm.Page
   if (typeof Xrm === 'undefined' || !Xrm.Page || !Xrm.Page.ui) return;
 
-  let revealedCount = 0;
+  // If we previously revealed fields, hide them again
+  if (window.__mojnRevealedFields && window.__mojnRevealedFields.length > 0) {
+    let hiddenCount = 0;
+    window.__mojnRevealedFields.forEach((name) => {
+      try {
+        const ctrl = Xrm.Page.ui.controls.get(name) as Xrm.Controls.StandardControl | null;
+        if (ctrl) {
+          ctrl.setVisible(false);
+          hiddenCount++;
+        }
+      } catch { /* ignore */ }
+    });
+    window.__mojnRevealedFields = undefined;
+    showToast(`🙈 ${hiddenCount} field(s) hidden again`);
+    return;
+  }
 
+  // Reveal all currently hidden fields and track their names
+  const revealed: string[] = [];
   Xrm.Page.ui.controls.forEach((ctrl) => {
     try {
       const standard = ctrl as Xrm.Controls.StandardControl;
       if (standard.getVisible && standard.getVisible() === false) {
         standard.setVisible(true);
-        revealedCount++;
+        revealed.push(ctrl.getName());
       }
     } catch {
       // Some special controls (e.g. sub-grids, web resources) may not support getVisible/setVisible
     }
   });
 
-  const message =
-    revealedCount > 0
-      ? `👁 ${revealedCount} hidden field(s) made visible`
-      : 'No hidden fields found';
-
-  showToast(message);
+  window.__mojnRevealedFields = revealed;
+  showToast(
+    revealed.length > 0
+      ? `👁 ${revealed.length} hidden field(s) made visible`
+      : 'No hidden fields found',
+  );
 }
 
 main();
