@@ -1,8 +1,18 @@
-// Auto-injected floating toolbar for CRM pages (ISOLATED world).
-// Does NOT touch Xrm — delegates injection to background via sendMessage.
+// DOM-injection toolbar for CRM pages (ISOLATED world).
+// Injects a "C" toggle button at the far left of the CRM ribbon.
+// Does NOT touch Xrm — delegates actions to background via sendMessage.
 
 const TOOLBAR_ID = 'crm-tools-ribbon-toolbar';
 const STYLE_ID   = 'crm-tools-ribbon-style';
+
+const RIBBON_SELECTORS = [
+  '#RibbonContainer',
+  '#crmRibbonManager',
+  '.ms-crm-commandBar',
+  '#CommandBarContainer',
+  '#navBar',
+  'nav[role="navigation"]',
+] as const;
 
 function injectStyles(): void {
   if (document.getElementById(STYLE_ID)) return;
@@ -10,30 +20,47 @@ function injectStyles(): void {
   style.id = STYLE_ID;
   style.textContent = `
 #crm-tools-ribbon-toolbar {
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  z-index: 2147483647;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  background: #1e64c8;
-  border-radius: 6px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.28);
-  padding: 6px 8px 8px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
   font-family: Segoe UI, Arial, sans-serif;
-  font-size: 12px;
-  min-width: 130px;
   user-select: none;
 }
-#crm-tools-ribbon-toolbar .crt-label {
-  color: rgba(255,255,255,0.75);
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  text-align: center;
-  margin-bottom: 6px;
+#crm-tools-ribbon-toolbar.crt-fallback {
+  position: fixed;
+  top: 6px;
+  left: 6px;
+  z-index: 2147483647;
+}
+#crm-tools-ribbon-toolbar .crt-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #1e64c8;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+#crm-tools-ribbon-toolbar .crt-toggle:hover {
+  background: #174fa0;
+}
+#crm-tools-ribbon-toolbar .crt-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 2147483647;
+  background: #1e64c8;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  padding: 4px;
+  min-width: 150px;
+  display: none;
 }
 #crm-tools-ribbon-toolbar .crt-btn {
   display: block;
@@ -50,31 +77,51 @@ function injectStyles(): void {
   text-align: left;
   white-space: nowrap;
   transition: background 0.15s;
+  box-sizing: border-box;
+}
+#crm-tools-ribbon-toolbar .crt-btn:first-child {
+  margin-top: 0;
 }
 #crm-tools-ribbon-toolbar .crt-btn:hover {
   background: rgba(255,255,255,0.28);
 }
   `;
-  document.head.appendChild(style);
+  (document.head || document.documentElement).appendChild(style);
+}
+
+function findRibbonContainer(): Element | null {
+  for (const selector of RIBBON_SELECTORS) {
+    const el = document.querySelector(selector);
+    if (el) return el;
+  }
+  return null;
 }
 
 function buildToolbar(): void {
-  // Idempotent: skip if already present (e.g. soft navigation without full page unload)
+  // Idempotent: skip if already injected (e.g. soft navigation without full page unload)
   if (document.getElementById(TOOLBAR_ID)) return;
 
   injectStyles();
 
-  const toolbar = document.createElement('div');
-  toolbar.id = TOOLBAR_ID;
+  // --- Wrapper ---
+  const wrapper = document.createElement('div');
+  wrapper.id = TOOLBAR_ID;
 
-  const label = document.createElement('div');
-  label.className = 'crt-label';
-  label.textContent = 'CRM Tools';
+  // --- Toggle "C" button ---
+  const toggle = document.createElement('button');
+  toggle.className = 'crt-toggle';
+  toggle.textContent = 'C';
+  toggle.title = 'CRM Tools';
+
+  // --- Dropdown panel ---
+  const dropdown = document.createElement('div');
+  dropdown.className = 'crt-dropdown';
 
   const allFieldsBtn = document.createElement('button');
   allFieldsBtn.className = 'crt-btn';
   allFieldsBtn.textContent = '📋 All Fields';
   allFieldsBtn.addEventListener('click', () => {
+    dropdown.style.display = 'none';
     chrome.runtime.sendMessage({ action: 'injectAllFields' });
   });
 
@@ -82,13 +129,37 @@ function buildToolbar(): void {
   optionSetsBtn.className = 'crt-btn';
   optionSetsBtn.textContent = '🔘 Option Sets';
   optionSetsBtn.addEventListener('click', () => {
+    dropdown.style.display = 'none';
     chrome.runtime.sendMessage({ action: 'injectOptionSets' });
   });
 
-  toolbar.appendChild(label);
-  toolbar.appendChild(allFieldsBtn);
-  toolbar.appendChild(optionSetsBtn);
-  document.body.appendChild(toolbar);
+  dropdown.appendChild(allFieldsBtn);
+  dropdown.appendChild(optionSetsBtn);
+
+  // --- Toggle click handler ---
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+  });
+
+  // --- Click-outside handler ---
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target as Node)) {
+      dropdown.style.display = 'none';
+    }
+  });
+
+  wrapper.appendChild(toggle);
+  wrapper.appendChild(dropdown);
+
+  // --- Inject into ribbon or fall back to body ---
+  const ribbonContainer = findRibbonContainer();
+  if (ribbonContainer) {
+    ribbonContainer.prepend(wrapper);
+  } else {
+    wrapper.classList.add('crt-fallback');
+    document.body.prepend(wrapper);
+  }
 }
 
 buildToolbar();
