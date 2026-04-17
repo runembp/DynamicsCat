@@ -74,6 +74,14 @@ None.
 
 ---
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 1 | Add Show Option Sets tool to extension popup | 2026-04-17 | 905c8fd | .planning/quick/260417-bgl-add-show-option-sets-tool-to-crm-chrome- |
+
+---
+
 ## Session Continuity
 
 ### To resume work:
