@@ -23,6 +23,12 @@
       "128": "icons/icon128.png"
     }
   },
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": ["*://*/*"]
+    }
+  ],
   "content_scripts": [
     {
       "matches": ["*://*.vlpadr.net/velliv*"],
