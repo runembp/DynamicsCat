@@ -15,7 +15,7 @@ function main(): void {
   }
 
   // Xrm is only available in the CRM form iframe — silently skip other frames
-  if (typeof Xrm === 'undefined' || !Xrm.Page) {
+  if (typeof Xrm === 'undefined' || !Xrm.Page || !Xrm.Page.ui || !Xrm.Page.data) {
     return;
   }
 
@@ -54,8 +54,8 @@ function injectStyles(): void {
   style.id = STYLE_ID;
   style.textContent = `
 #crm-tools-optionsets-panel {
-  position: fixed; top: 0; right: 0; width: auto; min-width: 420px; max-width: 90vw; height: 100vh;
-  background: #fff; border-left: 2px solid #1e64c8;
+  position: fixed; top: 0; right: 0; width: auto; min-width: 420px; max-width: 90vw; max-height: 90vh;
+  background: #fff; border: 2px solid #1e64c8;
   box-shadow: -4px 0 16px rgba(0,0,0,0.18);
   z-index: 2147483647; display: flex; flex-direction: column;
   font-family: Segoe UI, Arial, sans-serif; font-size: 13px; color: #222;
@@ -63,6 +63,7 @@ function injectStyles(): void {
 #crm-tools-optionsets-panel .cop-header {
   display: flex; align-items: center; justify-content: space-between;
   background: #1e64c8; color: #fff; padding: 10px 14px; flex-shrink: 0;
+  cursor: move; user-select: none;
 }
 #crm-tools-optionsets-panel .cop-header-title { font-size: 14px; font-weight: 600; }
 #crm-tools-optionsets-panel .cop-close {
@@ -116,6 +117,51 @@ function injectStyles(): void {
   document.head.appendChild(style);
 }
 
+function makeDraggable(panel: HTMLElement, handle: HTMLElement, closeBtn: HTMLElement): void {
+  // Convert right-anchored to left-anchored so we can reposition freely
+  requestAnimationFrame(() => {
+    const rect = panel.getBoundingClientRect();
+    panel.style.left  = rect.left + 'px';
+    panel.style.top   = rect.top  + 'px';
+    panel.style.right = '';
+  });
+
+  let dragging = false;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  const onMouseMove = (e: MouseEvent) => {
+    if (!dragging) return;
+    const x = Math.max(0, Math.min(e.clientX - offsetX, window.innerWidth  - panel.offsetWidth));
+    const y = Math.max(0, Math.min(e.clientY - offsetY, window.innerHeight - panel.offsetHeight));
+    panel.style.left = x + 'px';
+    panel.style.top  = y + 'px';
+  };
+
+  const onMouseUp = () => { dragging = false; handle.style.cursor = 'move'; };
+
+  handle.addEventListener('mousedown', (e) => {
+    if (closeBtn.contains(e.target as Node)) return;
+    dragging = true;
+    offsetX  = e.clientX - panel.offsetLeft;
+    offsetY  = e.clientY - panel.offsetTop;
+    handle.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup',   onMouseUp);
+
+  // Clean up document listeners when panel is removed
+  new MutationObserver((_, obs) => {
+    if (!document.contains(panel)) {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup',   onMouseUp);
+      obs.disconnect();
+    }
+  }).observe(document.body, { childList: true, subtree: true });
+}
+
 function buildPanel(
   attrs: Xrm.Attributes.Attribute[],
   labelMap: Record<string, string>,
@@ -140,6 +186,8 @@ function buildPanel(
   header.appendChild(title);
   header.appendChild(closeBtn);
   panel.appendChild(header);
+
+  makeDraggable(panel, header, closeBtn);
 
   // Entity info subheader
   const entityName = Xrm.Page.data.entity.getEntityName();

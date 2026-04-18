@@ -3,9 +3,8 @@
 
 export {};
 
-const PANEL_ID= 'crm-tools-fields-panel';
+const PANEL_ID = 'crm-tools-fields-panel';
 const STYLE_ID = 'crm-tools-fields-style';
-const LOG = (msg: string) => console.log('[DynamicsCat]', msg);
 
 function debounce<T extends unknown[]>(fn: (...args: T) => void, ms: number): (...args: T) => void {
   let timer: ReturnType<typeof setTimeout>;
@@ -16,28 +15,26 @@ function debounce<T extends unknown[]>(fn: (...args: T) => void, ms: number): (.
 }
 
 function main(): void {
-  LOG('all-fields.ts running in: ' + window.location.href);
-
   // Toggle: remove panel if already open
   const existing = document.getElementById(PANEL_ID);
   if (existing) {
-    LOG('Panel already open — closing.');
     existing.remove();
     return;
   }
 
   // Xrm is only available in the CRM form iframe — silently skip other frames
-  LOG('Xrm available: ' + (typeof Xrm !== 'undefined'));
-  if (typeof Xrm === 'undefined' || !Xrm.Page) {
-    LOG('Xrm.Page not found in this frame — skipping.');
+  if (typeof Xrm === 'undefined' || !Xrm.Page || !Xrm.Page.ui || !Xrm.Page.data) {
     return;
   }
 
-  LOG('Xrm.Page found! Reading attributes…');
-
   const attributes = Xrm.Page.data.entity.attributes.get();
+  const labelMap   = buildLabelMap();
 
-  // Build label map from UI controls
+  injectStyles();
+  buildPanel(attributes, labelMap);
+}
+
+function buildLabelMap(): Record<string, string> {
   const labelMap: Record<string, string> = {};
   Xrm.Page.ui.controls.forEach((ctrl) => {
     const name = ctrl.getName();
@@ -49,19 +46,7 @@ function main(): void {
       }
     }
   });
-
-  LOG(`Entity: ${Xrm.Page.data.entity.getEntityName()} — ${attributes.length} attribute(s)`);
-  attributes.forEach((attr) => {
-    const name  = attr.getName();
-    const type  = attr.getAttributeType ? attr.getAttributeType() : '?';
-    const label = labelMap[name] || name;
-    let val: unknown;
-    try { val = attr.getValue(); } catch { val = '(error)'; }
-    console.log(`  [${type}] ${label} (${name}) =`, val);
-  });
-
-  injectStyles();
-  buildPanel(attributes, labelMap);
+  return labelMap;
 }
 
 function injectStyles(): void {
@@ -70,8 +55,8 @@ function injectStyles(): void {
   style.id = STYLE_ID;
   style.textContent = `
 #crm-tools-fields-panel {
-  position: fixed; top: 0; right: 0; width: auto; min-width: 420px; max-width: 90vw; height: 100vh;
-  background: #fff; border-left: 2px solid #1e64c8;
+  position: fixed; top: 0; right: 0; width: auto; min-width: 420px; max-width: 90vw; max-height: 90vh;
+  background: #fff; border: 2px solid #1e64c8;
   box-shadow: -4px 0 16px rgba(0,0,0,0.18);
   z-index: 2147483647; display: flex; flex-direction: column;
   font-family: Segoe UI, Arial, sans-serif; font-size: 13px; color: #222;
@@ -79,17 +64,30 @@ function injectStyles(): void {
 #crm-tools-fields-panel .cfp-header {
   display: flex; align-items: center; justify-content: space-between;
   background: #1e64c8; color: #fff; padding: 10px 14px; flex-shrink: 0;
+  cursor: move; user-select: none;
 }
 #crm-tools-fields-panel .cfp-header-title { font-size: 14px; font-weight: 600; }
-#crm-tools-fields-panel .cfp-close {
+#crm-tools-fields-panel .cfp-close,
+#crm-tools-fields-panel .cfp-refresh {
   background: none; border: none; color: #fff; font-size: 18px;
   line-height: 1; cursor: pointer; padding: 0 2px; opacity: 0.85;
 }
-#crm-tools-fields-panel .cfp-close:hover { opacity: 1; }
+#crm-tools-fields-panel .cfp-close:hover,
+#crm-tools-fields-panel .cfp-refresh:hover { opacity: 1; }
+#crm-tools-fields-panel .cfp-refresh { font-size: 16px; margin-right: 4px; }
+#crm-tools-fields-panel .cfp-refresh:disabled { opacity: 0.5; cursor: default; }
+@keyframes cfp-spin { to { transform: rotate(360deg); } }
+#crm-tools-fields-panel .cfp-refresh.cfp-spinning { display: inline-block; animation: cfp-spin 0.8s linear infinite; }
 #crm-tools-fields-panel .cfp-subheader {
   padding: 6px 14px; background: #e8f0fe; font-size: 12px;
   color: #1e64c8; border-bottom: 1px solid #c5d8fb; flex-shrink: 0;
 }
+#crm-tools-fields-panel .cfp-copy-val {
+  cursor: pointer; border-bottom: 1px dashed #1e64c8;
+  transition: background 0.15s;
+}
+#crm-tools-fields-panel .cfp-copy-val:hover { background: #c5d8fb; border-radius: 3px; }
+#crm-tools-fields-panel .cfp-copy-val.cfp-copied { background: #b7f0c8; border-bottom-color: #2a9c52; border-radius: 3px; }
 #crm-tools-fields-panel .cfp-body { overflow-y: auto; overflow-x: auto; flex: 1; }
 #crm-tools-fields-panel table { border-collapse: collapse; }
 #crm-tools-fields-panel thead th {
@@ -163,62 +161,57 @@ function formatValue(attr: Xrm.Attributes.Attribute): string | null {
   }
 }
 
-function buildPanel(
+function makeDraggable(panel: HTMLElement, handle: HTMLElement, closeBtn: HTMLElement): void {
+  // Convert right-anchored to left-anchored so we can reposition freely
+  requestAnimationFrame(() => {
+    const rect = panel.getBoundingClientRect();
+    panel.style.left  = rect.left + 'px';
+    panel.style.top   = rect.top  + 'px';
+    panel.style.right = '';
+  });
+
+  let dragging = false;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  const onMouseMove = (e: MouseEvent) => {
+    if (!dragging) return;
+    const x = Math.max(0, Math.min(e.clientX - offsetX, window.innerWidth  - panel.offsetWidth));
+    const y = Math.max(0, Math.min(e.clientY - offsetY, window.innerHeight - panel.offsetHeight));
+    panel.style.left = x + 'px';
+    panel.style.top  = y + 'px';
+  };
+
+  const onMouseUp = () => { dragging = false; handle.style.cursor = 'move'; };
+
+  handle.addEventListener('mousedown', (e) => {
+    if (closeBtn.contains(e.target as Node)) return;
+    dragging = true;
+    offsetX  = e.clientX - panel.offsetLeft;
+    offsetY  = e.clientY - panel.offsetTop;
+    handle.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup',   onMouseUp);
+
+  // Clean up document listeners when panel is removed
+  new MutationObserver((_, obs) => {
+    if (!document.contains(panel)) {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup',   onMouseUp);
+      obs.disconnect();
+    }
+  }).observe(document.body, { childList: true, subtree: true });
+}
+
+function populateTbody(
+  tbody: HTMLTableSectionElement,
   attributes: Xrm.Attributes.Attribute[],
   labelMap: Record<string, string>,
 ): void {
-  const panel = document.createElement('div');
-  panel.id = PANEL_ID;
-
-  // Header
-  const header = document.createElement('div');
-  header.className = 'cfp-header';
-
-  const title = document.createElement('span');
-  title.className = 'cfp-header-title';
-  title.textContent = '📋 All Fields';
-
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'cfp-close';
-  closeBtn.title = 'Close';
-  closeBtn.textContent = '✕';
-  closeBtn.addEventListener('click', () => panel.remove());
-
-  header.appendChild(title);
-  header.appendChild(closeBtn);
-  panel.appendChild(header);
-
-  // Entity info subheader
-  const entityName = Xrm.Page.data.entity.getEntityName();
-  const entityId   = Xrm.Page.data.entity.getId();
-
-  const subheader = document.createElement('div');
-  subheader.className = 'cfp-subheader';
-  subheader.textContent = `Entity: ${entityName}  |  ID: ${entityId || '(new record)'}`;
-  panel.appendChild(subheader);
-
-  // Search bar
-  const searchContainer = document.createElement('div');
-  searchContainer.className = 'cfp-search';
-  const searchInput = document.createElement('input');
-  searchInput.type = 'search';
-  searchInput.placeholder = 'Search by label, schema name or value…';
-  // Prevent the host CRM page from swallowing keyboard events inside the panel
-  searchInput.addEventListener('keydown', (e) => e.stopPropagation());
-  searchInput.addEventListener('keyup', (e) => e.stopPropagation());
-  searchContainer.appendChild(searchInput);
-  panel.appendChild(searchContainer);
-
-  // Scrollable body with table
-  const body = document.createElement('div');
-  body.className = 'cfp-body';
-
-  const table = document.createElement('table');
-  const thead = document.createElement('thead');
-  thead.innerHTML = '<tr><th>Label</th><th>Schema Name</th><th>Type</th><th>Value</th></tr>';
-  table.appendChild(thead);
-
-  const tbody = document.createElement('tbody');
+  tbody.innerHTML = '';
   const sortedAttrs = [...attributes].sort((a, b) => {
     const la = (labelMap[a.getName()] || a.getName()).toLowerCase();
     const lb = (labelMap[b.getName()] || b.getName()).toLowerCase();
@@ -263,6 +256,115 @@ function buildPanel(
     tr.appendChild(tdValue);
     tbody.appendChild(tr);
   });
+}
+
+function copyToClipboard(text: string): void {
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).catch(() => execCommandCopy(text));
+  } else {
+    execCommandCopy(text);
+  }
+}
+
+function execCommandCopy(text: string): void {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+}
+
+function makeCopySpan(display: string, copyValue: string): HTMLSpanElement {
+  const span = document.createElement('span');
+  span.className = 'cfp-copy-val';
+  span.textContent = display;
+  span.title = `Click to copy: ${copyValue}`;
+  span.addEventListener('click', () => {
+    copyToClipboard(copyValue);
+    span.classList.add('cfp-copied');
+    setTimeout(() => span.classList.remove('cfp-copied'), 1200);
+  });
+  return span;
+}
+
+function buildPanel(
+  attributes: Xrm.Attributes.Attribute[],
+  labelMap: Record<string, string>,
+): void {
+  const panel = document.createElement('div');
+  panel.id = PANEL_ID;
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'cfp-header';
+
+  const title = document.createElement('span');
+  title.className = 'cfp-header-title';
+  title.textContent = '📋 All Fields';
+
+  const refreshBtn = document.createElement('button');
+  refreshBtn.className = 'cfp-refresh';
+  refreshBtn.title = 'Refresh form data';
+  refreshBtn.textContent = '↻';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'cfp-close';
+  closeBtn.title = 'Close';
+  closeBtn.textContent = '✕';
+  closeBtn.addEventListener('click', () => panel.remove());
+
+  header.appendChild(title);
+  header.appendChild(refreshBtn);
+  header.appendChild(closeBtn);
+  panel.appendChild(header);
+
+  makeDraggable(panel, header, closeBtn);
+
+  // Entity info subheader
+  const entityName = Xrm.Page.data.entity.getEntityName();
+  const entityId   = Xrm.Page.data.entity.getId();
+
+  const subheader = document.createElement('div');
+  subheader.className = 'cfp-subheader';
+
+  subheader.append('Entity: ');
+  subheader.appendChild(makeCopySpan(entityName, entityName));
+  subheader.append('  |  ID: ');
+  if (entityId) {
+    // Strip surrounding braces from the GUID when copying
+    const cleanId = entityId.replace(/^\{|\}$/g, '');
+    subheader.appendChild(makeCopySpan(entityId, cleanId));
+  } else {
+    subheader.append('(new record)');
+  }
+
+  panel.appendChild(subheader);
+
+  // Search bar
+  const searchContainer = document.createElement('div');
+  searchContainer.className = 'cfp-search';
+  const searchInput = document.createElement('input');
+  searchInput.type = 'search';
+  searchInput.placeholder = 'Search by label, schema name or value…';
+  // Prevent the host CRM page from swallowing keyboard events inside the panel
+  searchInput.addEventListener('keydown', (e) => e.stopPropagation());
+  searchInput.addEventListener('keyup', (e) => e.stopPropagation());
+  searchContainer.appendChild(searchInput);
+  panel.appendChild(searchContainer);
+
+  // Scrollable body with table
+  const body = document.createElement('div');
+  body.className = 'cfp-body';
+
+  const table = document.createElement('table');
+  const thead = document.createElement('thead');
+  thead.innerHTML = '<tr><th>Label</th><th>Schema Name</th><th>Type</th><th>Value</th></tr>';
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  populateTbody(tbody, attributes, labelMap);
 
   table.appendChild(tbody);
 
@@ -284,6 +386,28 @@ function buildPanel(
     });
     noResults.style.display = visible === 0 ? '' : 'none';
   }, 100));
+
+  const applySearch = () => searchInput.dispatchEvent(new Event('input'));
+
+  refreshBtn.addEventListener('click', () => {
+    refreshBtn.disabled = true;
+    refreshBtn.classList.add('cfp-spinning');
+    Xrm.Page.data.refresh(false).then(
+      () => {
+        const newAttrs    = Xrm.Page.data.entity.attributes.get();
+        const newLabels   = buildLabelMap();
+        populateTbody(tbody, newAttrs, newLabels);
+        applySearch();
+        refreshBtn.classList.remove('cfp-spinning');
+        refreshBtn.disabled = false;
+      },
+      (err: unknown) => {
+        console.error('[DynamicsCat] Refresh failed:', err);
+        refreshBtn.classList.remove('cfp-spinning');
+        refreshBtn.disabled = false;
+      },
+    );
+  });
 
   body.appendChild(table);
   body.appendChild(noResults);
