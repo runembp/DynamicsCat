@@ -8,6 +8,7 @@
     "build": "node build.js",
     "dev": "node build.js --dev",
     "watch": "node build.js --watch",
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && echo Cleaned dist/",
     "typecheck": "tsc",
     "lint": "eslint src/",
     "check": "npm run typecheck && npm run lint"

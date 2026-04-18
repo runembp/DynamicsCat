@@ -1,31 +1,25 @@
+function injectScript(file: string): void {
+  chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+    if (!tab?.id) return;
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id, allFrames: true },
+      files: [file],
+      world: 'MAIN',
+    });
+  });
+}
+
+function bindButton(id: string, file: string): void {
+  const btn = document.getElementById(id);
+  if (!btn) {
+    console.error(`[MojnTools] Popup element #${id} not found`);
+    return;
+  }
+  btn.addEventListener('click', () => injectScript(file));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('btn-all-fields')!.addEventListener('click', () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-      chrome.scripting.executeScript({
-        target: { tabId: tab.id!, allFrames: true },
-        files: ['content/all-fields.js'],
-        world: 'MAIN',
-      });
-    });
-  });
-
-  document.getElementById('btn-show-option-sets')!.addEventListener('click', () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-      chrome.scripting.executeScript({
-        target: { tabId: tab.id!, allFrames: true },
-        files: ['content/option-sets.js'],
-        world: 'MAIN',
-      });
-    });
-  });
-
-  document.getElementById('btn-show-hidden-fields')!.addEventListener('click', () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-      chrome.scripting.executeScript({
-        target: { tabId: tab.id!, allFrames: true },
-        files: ['content/show-hidden-fields.js'],
-        world: 'MAIN',
-      });
-    });
-  });
+  bindButton('btn-all-fields',        'content/all-fields.js');
+  bindButton('btn-show-option-sets',  'content/option-sets.js');
+  bindButton('btn-show-hidden-fields','content/show-hidden-fields.js');
 });
