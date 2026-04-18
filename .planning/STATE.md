@@ -82,6 +82,7 @@ None.
 | 2 | Auto-injected CRM ribbon toolbar + remove Hello World | 2026-04-17 | d5029cb | .planning/quick/260417-c2p-inject-crm-ribbon-toolbar-with-all-field |
 | 3 | Ribbon toolbar redesign: DOM inject + toggle dropdown + C icon | 2026-04-17 | 68e252d | .planning/quick/260417-cfm-redesign-ribbon-toolbar-inject-into-crm- |
 | 4 | Fix ribbon: inject into crmMasthead as navTabButton, fix dropdown z-index | 2026-04-17 | 3660cd3 | .planning/quick/260417-cvx-fix-ribbon-toolbar-inject-into-crmmasthe |
+| 5 | Remove hardcoded domain (vlpadr.net) from version control | 2026-04-18 | dcfe904 | .planning/quick/20260418-remove-hardcoded-domain |
 
 ---
 
