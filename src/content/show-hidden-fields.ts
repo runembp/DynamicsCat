@@ -1,16 +1,16 @@
 // Toggle content script: reveals all hidden controls on the CRM form, or hides them again.
-// Uses window.__mojnRevealedFields to track revealed fields between injections.
+// Uses window.__dynamicsCatRevealedFields to track revealed fields between injections.
 // Injected via chrome.scripting.executeScript with allFrames: true, world: 'MAIN'.
 
 export {};
 
 declare global {
   interface Window {
-    __mojnRevealedFields?: string[];
+    __dynamicsCatRevealedFields?: string[];
     // true = fields currently revealed (next click should hide)
     // false = fields hidden by us (next click should re-reveal, bypassing getVisible())
     // undefined = initial state (next click should detect + reveal)
-    __mojnFieldsRevealed?: boolean;
+    __dynamicsCatFieldsRevealed?: boolean;
   }
 }
 
@@ -72,8 +72,8 @@ function main(): void {
   if (typeof Xrm === 'undefined' || !Xrm.Page || !Xrm.Page.ui) return;
 
   // Fields are currently revealed — hide them and remember which ones we hid.
-  if (window.__mojnFieldsRevealed === true) {
-    const names = window.__mojnRevealedFields ?? [];
+  if (window.__dynamicsCatFieldsRevealed === true) {
+    const names = window.__dynamicsCatRevealedFields ?? [];
     let hiddenCount = 0;
     names.forEach((name) => {
       try {
@@ -84,17 +84,17 @@ function main(): void {
         }
       } catch { /* ignore */ }
     });
-    // Keep __mojnRevealedFields intact so the next click can re-reveal by name
+    // Keep __dynamicsCatRevealedFields intact so the next click can re-reveal by name
     // without relying on getVisible() (which may lag behind CRM's async DOM updates).
-    window.__mojnFieldsRevealed = false;
+    window.__dynamicsCatFieldsRevealed = false;
     showToast(`🙈 ${hiddenCount} field(s) hidden again`);
     return;
   }
 
   // Fields were hidden by us — re-reveal by stored name, bypassing getVisible().
-  if (window.__mojnFieldsRevealed === false && window.__mojnRevealedFields && window.__mojnRevealedFields.length > 0) {
+  if (window.__dynamicsCatFieldsRevealed === false && window.__dynamicsCatRevealedFields && window.__dynamicsCatRevealedFields.length > 0) {
     let revealedCount = 0;
-    window.__mojnRevealedFields.forEach((name) => {
+    window.__dynamicsCatRevealedFields.forEach((name) => {
       try {
         const ctrl = Xrm.Page.ui.controls.get(name) as Xrm.Controls.StandardControl | null;
         if (ctrl) {
@@ -103,7 +103,7 @@ function main(): void {
         }
       } catch { /* ignore */ }
     });
-    window.__mojnFieldsRevealed = true;
+    window.__dynamicsCatFieldsRevealed = true;
     showToast(`👁 ${revealedCount} hidden field(s) made visible`);
     return;
   }
@@ -122,8 +122,8 @@ function main(): void {
     }
   });
 
-  window.__mojnRevealedFields = revealed;
-  window.__mojnFieldsRevealed = revealed.length > 0 ? true : undefined;
+  window.__dynamicsCatRevealedFields = revealed;
+  window.__dynamicsCatFieldsRevealed = revealed.length > 0 ? true : undefined;
   showToast(
     revealed.length > 0
       ? `👁 ${revealed.length} hidden field(s) made visible`

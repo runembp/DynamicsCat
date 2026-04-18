@@ -7,7 +7,7 @@
 ## Tech Debt
 
 **README describes a stale developer workflow:**
-- Issue: `README.md` instructs developers to "Load unpacked" and select the `CRMChromeTools` project folder, but the build system outputs to `dist/`. The extension must be loaded from `dist/` not the project root (which has no bundled JS).
+- Issue: `README.md` instructs developers to "Load unpacked" and select the `DynamicsCat` project folder, but the build system outputs to `dist/`. The extension must be loaded from `dist/` not the project root (which has no bundled JS).
 - Files: `README.md`, `build.js` (line 62: `outdir: 'dist'`)
 - Impact: New developers following the README will load a broken extension (source `.ts` files are not directly executable by Chrome).
 - Fix approach: Update README to specify `dist/` as the Load Unpacked target. Add a note that `npm run build` must be run first.

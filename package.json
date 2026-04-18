@@ -1,5 +1,5 @@
 {
-  "name": "crm-chrome-tools",
+  "name": "dynamicscat",
   "version": "0.1.0",
   "description": "Dynamics CRM 2016 helper tools Chrome extension",
   "private": true,

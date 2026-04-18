@@ -5,7 +5,7 @@
 ## Directory Layout
 
 ```
-CRMChromeTools/
+DynamicsCat/
 ├── src/                        # All TypeScript source files
 │   ├── background.ts           # Service worker entry point (placeholder)
 │   ├── popup/                  # Extension popup UI

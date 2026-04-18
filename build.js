@@ -32,6 +32,7 @@ function copyStatics() {
   copyFileSync('src/popup/popup.html', 'dist/popup/popup.html');
   copyFileSync('src/popup/popup.css', 'dist/popup/popup.css');
   copyFileSync('src/content/option-sets.css', 'dist/content/option-sets.css');
+  copyFileSync('src/content/all-fields.css', 'dist/content/all-fields.css');
   copyFileSync('src/content/show-hidden-fields.css', 'dist/content/show-hidden-fields.css');
 }
 
