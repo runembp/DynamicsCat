@@ -1,0 +1,177 @@
+/* ── DynamicsCat — Show All Fields Panel ────────────────────────────────────── */
+
+#crm-tools-fields-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 580px;
+  height: 100vh;
+  background: #fff;
+  border-left: 2px solid #1e64c8;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.18);
+  z-index: 2147483647;
+  display: flex;
+  flex-direction: column;
+  font-family: Segoe UI, Arial, sans-serif;
+  font-size: 13px;
+  color: #222;
+}
+
+/* Header */
+#crm-tools-fields-panel .cfp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1e64c8;
+  color: #fff;
+  padding: 10px 14px;
+  flex-shrink: 0;
+}
+
+#crm-tools-fields-panel .cfp-header-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#crm-tools-fields-panel .cfp-close,
+#crm-tools-fields-panel .cfp-refresh {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0.85;
+}
+
+#crm-tools-fields-panel .cfp-close:hover,
+#crm-tools-fields-panel .cfp-refresh:hover {
+  opacity: 1;
+}
+
+#crm-tools-fields-panel .cfp-refresh {
+  font-size: 16px;
+  margin-right: 4px;
+}
+
+#crm-tools-fields-panel .cfp-refresh:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@keyframes cfp-spin {
+  to { transform: rotate(360deg); }
+}
+
+#crm-tools-fields-panel .cfp-refresh.cfp-spinning {
+  display: inline-block;
+  animation: cfp-spin 0.8s linear infinite;
+}
+
+/* Subheader / entity info */
+#crm-tools-fields-panel .cfp-subheader {
+  padding: 6px 14px;
+  background: #e8f0fe;
+  font-size: 12px;
+  color: #1e64c8;
+  border-bottom: 1px solid #c5d8fb;
+  flex-shrink: 0;
+}
+
+#crm-tools-fields-panel .cfp-copy-val {
+  cursor: pointer;
+  border-bottom: 1px dashed #1e64c8;
+  transition: background 0.15s;
+}
+
+#crm-tools-fields-panel .cfp-copy-val:hover {
+  background: #c5d8fb;
+  border-radius: 3px;
+}
+
+#crm-tools-fields-panel .cfp-copy-val.cfp-copied {
+  background: #b7f0c8;
+  border-bottom-color: #2a9c52;
+  border-radius: 3px;
+}
+
+/* Scrollable table area */
+#crm-tools-fields-panel .cfp-body {
+  overflow-y: auto;
+  flex: 1;
+}
+
+#crm-tools-fields-panel table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#crm-tools-fields-panel thead th {
+  position: sticky;
+  top: 0;
+  background: #f0f4ff;
+  border-bottom: 2px solid #1e64c8;
+  padding: 7px 10px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #444;
+  white-space: nowrap;
+}
+
+#crm-tools-fields-panel tbody tr:nth-child(even) {
+  background: #f8f9ff;
+}
+
+#crm-tools-fields-panel tbody tr:hover {
+  background: #dceafe;
+}
+
+#crm-tools-fields-panel td {
+  padding: 5px 10px;
+  border-bottom: 1px solid #e8e8e8;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+/* Column widths */
+#crm-tools-fields-panel td:nth-child(1),
+#crm-tools-fields-panel th:nth-child(1) { width: 26%; } /* Label */
+#crm-tools-fields-panel td:nth-child(2),
+#crm-tools-fields-panel th:nth-child(2) { width: 26%; } /* Schema */
+#crm-tools-fields-panel td:nth-child(3),
+#crm-tools-fields-panel th:nth-child(3) { width: 14%; } /* Type */
+#crm-tools-fields-panel td:nth-child(4),
+#crm-tools-fields-panel th:nth-child(4) { width: 34%; } /* Value */
+
+/* Schema name — monospace */
+#crm-tools-fields-panel td:nth-child(2) {
+  font-family: Consolas, monospace;
+  font-size: 12px;
+  color: #555;
+}
+
+/* Type badge */
+#crm-tools-fields-panel .cfp-type {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  background: #e8e8e8;
+  color: #444;
+}
+
+/* Empty/null value */
+#crm-tools-fields-panel .cfp-null {
+  color: #aaa;
+  font-style: italic;
+}
+
+/* Error state */
+#crm-tools-fields-panel .cfp-error {
+  padding: 20px 16px;
+  color: #c00;
+}
