@@ -49,12 +49,15 @@ function injectStyles(): void {
   style.textContent = `
 #crm-tools-ribbon-toolbar .navTabButtonLink { cursor: pointer; text-decoration: none; }
 .crt-dropdown-btn {
-  display: block; width: 100%; padding: 8px 16px;
-  background: transparent; border: none; border-radius: 3px;
-  color: #fff; font-size: 14px; font-family: Segoe UI, Arial, sans-serif;
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; height: 40px; padding: 0 16px;
+  background: transparent; border: none;
+  color: #1f1f1f; font-size: 13px; font-family: "Google Sans", Roboto, "Segoe UI", Arial, sans-serif;
   cursor: pointer; text-align: left; white-space: nowrap;
 }
-.crt-dropdown-btn:hover { background: rgba(255,255,255,0.2); }
+.crt-dropdown-btn:hover { background: #f1f3f4; }
+.crt-dropdown-btn:active { background: #e8eaed; }
+.crt-btn-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
   `;
   (document.head || document.documentElement).appendChild(style);
 }
@@ -103,25 +106,34 @@ function buildToolbar(): void {
   dropdown.style.cssText = [
     'position: fixed',
     'z-index: 2147483647',
-    'background: #1e64c8',
-    'border-radius: 4px',
-    'box-shadow: 0 4px 12px rgba(0,0,0,0.3)',
-    'padding: 4px',
-    'min-width: 200px',
+    'background: #fff',
+    'border-radius: 8px',
+    'box-shadow: 0 2px 10px rgba(0,0,0,0.18)',
+    'padding: 8px 0',
+    'min-width: 220px',
     'display: none',
   ].join('; ');
 
-  const allFieldsBtn = document.createElement('button');
-  allFieldsBtn.className = 'crt-dropdown-btn';
-  allFieldsBtn.textContent = '📋 All Fields';
+  function makeDropdownBtn(icon: string, label: string): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.className = 'crt-dropdown-btn';
+    const iconEl = document.createElement('span');
+    iconEl.className = 'crt-btn-icon';
+    iconEl.textContent = icon;
+    const labelEl = document.createElement('span');
+    labelEl.textContent = label;
+    btn.appendChild(iconEl);
+    btn.appendChild(labelEl);
+    return btn;
+  }
+
+  const allFieldsBtn = makeDropdownBtn('📋', 'All Fields');
   allFieldsBtn.addEventListener('click', () => {
     dropdown.style.display = 'none';
     sendAction('injectAllFields');
   });
 
-  const optionSetsBtn = document.createElement('button');
-  optionSetsBtn.className = 'crt-dropdown-btn';
-  optionSetsBtn.textContent = '🔘 Option Sets';
+  const optionSetsBtn = makeDropdownBtn('🔘', 'Option Sets');
   optionSetsBtn.addEventListener('click', () => {
     dropdown.style.display = 'none';
     sendAction('injectOptionSets');
@@ -130,9 +142,7 @@ function buildToolbar(): void {
   dropdown.appendChild(allFieldsBtn);
   dropdown.appendChild(optionSetsBtn);
 
-  const showHiddenBtn = document.createElement('button');
-  showHiddenBtn.className = 'crt-dropdown-btn';
-  showHiddenBtn.textContent = '👁 Hidden Fields';
+  const showHiddenBtn = makeDropdownBtn('👁', 'Hidden Fields');
   showHiddenBtn.addEventListener('click', () => {
     dropdown.style.display = 'none';
     sendAction('injectShowHiddenFields');
