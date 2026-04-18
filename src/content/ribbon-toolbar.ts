@@ -8,6 +8,8 @@ const STYLE_ID   = 'crm-tools-ribbon-style';
 const DROPDOWN_ID = 'crm-tools-ribbon-dropdown';
 const CTX_BANNER_ID = 'crm-tools-ctx-banner';
 
+let outsideClickHandler: ((e: MouseEvent) => void) | null = null;
+
 /** Show a persistent banner when the extension context has been invalidated. */
 function showContextInvalidatedBanner(): void {
   if (document.getElementById(CTX_BANNER_ID)) return;
@@ -53,7 +55,6 @@ function injectStyles(): void {
   cursor: pointer; text-align: left; white-space: nowrap;
 }
 .crt-dropdown-btn:hover { background: rgba(255,255,255,0.2); }
-.crt-fallback { position: fixed !important; top: 6px; left: 6px; z-index: 2147483646; }
   `;
   (document.head || document.documentElement).appendChild(style);
 }
@@ -156,21 +157,39 @@ function buildToolbar(): void {
     }
   });
 
-  // --- Click-outside handler ---
-  document.addEventListener('click', (e: MouseEvent) => {
+  // --- Click-outside handler (replace previous to avoid duplicate listeners) ---
+  if (outsideClickHandler) document.removeEventListener('click', outsideClickHandler);
+  outsideClickHandler = (e: MouseEvent) => {
     if (!wrapper.contains(e.target as Node) && !dropdown.contains(e.target as Node)) {
       dropdown.style.display = 'none';
     }
-  });
+  };
+  document.addEventListener('click', outsideClickHandler);
 
-  // --- Inject into #navBar (where crm-power-pane-button lives), fall back to body ---
+  // --- Inject into #navBar (where crm-power-pane-button lives) ---
+  // If navBar isn't in the DOM yet, clean up and let the MutationObserver retry.
+  // Never fall back to body — avoids polluting CRM form iframes with a stray button.
   const navBar = document.getElementById('navBar');
-  if (navBar) {
-    navBar.prepend(wrapper);
-  } else {
-    wrapper.classList.add('crt-fallback');
-    document.body.prepend(wrapper);
+  if (!navBar) {
+    dropdown.remove();
+    if (outsideClickHandler) {
+      document.removeEventListener('click', outsideClickHandler);
+      outsideClickHandler = null;
+    }
+    return;
   }
+  navBar.prepend(wrapper);
+}
+
+/** Re-inject the toolbar whenever CRM removes it (e.g. internal SPA navigation). */
+function startObserver(): void {
+  // Observe document.body (never replaced) rather than #crmMasthead so that
+  // the observer stays alive even when CRM SPA navigation replaces the masthead element.
+  const root = document.body;
+  new MutationObserver(() => {
+    if (!document.getElementById(TOOLBAR_ID)) buildToolbar();
+  }).observe(root, { childList: true, subtree: true });
 }
 
 buildToolbar();
+startObserver();
