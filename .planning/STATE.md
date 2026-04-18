@@ -83,6 +83,9 @@ None.
 | 3 | Ribbon toolbar redesign: DOM inject + toggle dropdown + C icon | 2026-04-17 | 68e252d | .planning/quick/260417-cfm-redesign-ribbon-toolbar-inject-into-crm- |
 | 4 | Fix ribbon: inject into crmMasthead as navTabButton, fix dropdown z-index | 2026-04-17 | 3660cd3 | .planning/quick/260417-cvx-fix-ribbon-toolbar-inject-into-crmmasthe |
 | 5 | Remove hardcoded domain (vlpadr.net) from version control | 2026-04-18 | dcfe904 | .planning/quick/20260418-remove-hardcoded-domain |
+| 6 | lint-guard Copilot CLI extension (onPostToolUse ESLint hook) | 2026-04-18 | 704fc1d | .planning/quick/20260418-lint-guard-extension |
+| 7 | Tech debt: null guards, build lint, clean script, dead CSS | 2026-04-18 | 10ee030 | .planning/quick/20260418-tech-debt-fixes |
+| 8 | Perf: debounce all-fields search input (100ms) | 2026-04-18 | 8f0a0f7 | .planning/quick/20260418-search-debounce |
 
 ---
 
