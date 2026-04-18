@@ -39,7 +39,7 @@ function buildToolbar(): void {
   const wrapper = document.createElement('span');
   wrapper.className = 'navTabButton';
   wrapper.id = TOOLBAR_ID;
-  wrapper.title = 'MojnTools';
+  wrapper.title = 'DynamicsCat';
 
   const link = document.createElement('a');
   link.className = 'navTabButtonLink';
@@ -52,7 +52,7 @@ function buildToolbar(): void {
 
   const icon = document.createElement('img');
   icon.src = chrome.runtime.getURL('icons/icon32.png');
-  icon.alt = 'MojnTools';
+  icon.alt = 'DynamicsCat';
   icon.style.cssText = 'width:24px;height:24px;display:block;';
 
   imgContainer.appendChild(icon);

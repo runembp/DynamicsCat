@@ -5,7 +5,7 @@ export {};
 
 const PANEL_ID= 'crm-tools-fields-panel';
 const STYLE_ID = 'crm-tools-fields-style';
-const LOG = (msg: string) => console.log('[MojnTools]', msg);
+const LOG = (msg: string) => console.log('[DynamicsCat]', msg);
 
 function debounce<T extends unknown[]>(fn: (...args: T) => void, ms: number): (...args: T) => void {
   let timer: ReturnType<typeof setTimeout>;

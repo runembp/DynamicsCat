@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "MojnTools",
+  "name": "DynamicsCat",
   "version": "0.1.0",
-  "description": "MojnTools — Dynamics CRM 2016 helper tools for form field inspection and more.",
+  "description": "DynamicsCat — Dynamics CRM 2016 helper tools for form field inspection and more.",
   "permissions": [
     "activeTab",
     "scripting"
@@ -14,7 +14,7 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "MojnTools",
+    "default_title": "DynamicsCat",
     "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "icons/icon16.png",

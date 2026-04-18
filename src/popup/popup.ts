@@ -12,7 +12,7 @@ function injectScript(file: string): void {
 function bindButton(id: string, file: string): void {
   const btn = document.getElementById(id);
   if (!btn) {
-    console.error(`[MojnTools] Popup element #${id} not found`);
+    console.error(`[DynamicsCat] Popup element #${id} not found`);
     return;
   }
   btn.addEventListener('click', () => injectScript(file));
