@@ -5,7 +5,13 @@
 export {};
 
 declare global {
-  interface Window { __mojnRevealedFields?: string[]; }
+  interface Window {
+    __mojnRevealedFields?: string[];
+    // true = fields currently revealed (next click should hide)
+    // false = fields hidden by us (next click should re-reveal, bypassing getVisible())
+    // undefined = initial state (next click should detect + reveal)
+    __mojnFieldsRevealed?: boolean;
+  }
 }
 
 const STYLE_ID = 'crm-tools-show-hidden-style';
@@ -65,10 +71,11 @@ function main(): void {
   // Silently skip frames that don't have Xrm.Page
   if (typeof Xrm === 'undefined' || !Xrm.Page || !Xrm.Page.ui) return;
 
-  // If we previously revealed fields, hide them again
-  if (window.__mojnRevealedFields && window.__mojnRevealedFields.length > 0) {
+  // Fields are currently revealed — hide them and remember which ones we hid.
+  if (window.__mojnFieldsRevealed === true) {
+    const names = window.__mojnRevealedFields ?? [];
     let hiddenCount = 0;
-    window.__mojnRevealedFields.forEach((name) => {
+    names.forEach((name) => {
       try {
         const ctrl = Xrm.Page.ui.controls.get(name) as Xrm.Controls.StandardControl | null;
         if (ctrl) {
@@ -77,12 +84,31 @@ function main(): void {
         }
       } catch { /* ignore */ }
     });
-    window.__mojnRevealedFields = undefined;
+    // Keep __mojnRevealedFields intact so the next click can re-reveal by name
+    // without relying on getVisible() (which may lag behind CRM's async DOM updates).
+    window.__mojnFieldsRevealed = false;
     showToast(`🙈 ${hiddenCount} field(s) hidden again`);
     return;
   }
 
-  // Reveal all currently hidden fields and track their names
+  // Fields were hidden by us — re-reveal by stored name, bypassing getVisible().
+  if (window.__mojnFieldsRevealed === false && window.__mojnRevealedFields && window.__mojnRevealedFields.length > 0) {
+    let revealedCount = 0;
+    window.__mojnRevealedFields.forEach((name) => {
+      try {
+        const ctrl = Xrm.Page.ui.controls.get(name) as Xrm.Controls.StandardControl | null;
+        if (ctrl) {
+          ctrl.setVisible(true);
+          revealedCount++;
+        }
+      } catch { /* ignore */ }
+    });
+    window.__mojnFieldsRevealed = true;
+    showToast(`👁 ${revealedCount} hidden field(s) made visible`);
+    return;
+  }
+
+  // Initial state — detect all hidden fields via getVisible() and reveal them.
   const revealed: string[] = [];
   Xrm.Page.ui.controls.forEach((ctrl) => {
     try {
@@ -97,6 +123,7 @@ function main(): void {
   });
 
   window.__mojnRevealedFields = revealed;
+  window.__mojnFieldsRevealed = revealed.length > 0 ? true : undefined;
   showToast(
     revealed.length > 0
       ? `👁 ${revealed.length} hidden field(s) made visible`
