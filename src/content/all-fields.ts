@@ -7,6 +7,14 @@ const PANEL_ID= 'crm-tools-fields-panel';
 const STYLE_ID = 'crm-tools-fields-style';
 const LOG = (msg: string) => console.log('[MojnTools]', msg);
 
+function debounce<T extends unknown[]>(fn: (...args: T) => void, ms: number): (...args: T) => void {
+  let timer: ReturnType<typeof setTimeout>;
+  return (...args: T) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  };
+}
+
 function main(): void {
   LOG('all-fields.ts running in: ' + window.location.href);
 
@@ -263,7 +271,7 @@ function buildPanel(
   noResults.textContent = 'No matching fields.';
   noResults.style.display = 'none';
 
-  searchInput.addEventListener('input', () => {
+  searchInput.addEventListener('input', debounce(() => {
     const q = searchInput.value.toLowerCase().trim();
     let visible = 0;
     tbody.querySelectorAll<HTMLTableRowElement>('tr').forEach((row) => {
@@ -275,7 +283,7 @@ function buildPanel(
       if (match) visible++;
     });
     noResults.style.display = visible === 0 ? '' : 'none';
-  });
+  }, 100));
 
   body.appendChild(table);
   body.appendChild(noResults);
