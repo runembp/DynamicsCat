@@ -2,6 +2,21 @@
 
 A Chrome Extension for Dynamics CRM 2016 — helper tools for form field inspection, option set browsing, and ribbon toolbar automation.
 
+## Quickstart (no build required)
+
+The `dist/` folder is included in the repo — no Node.js needed.
+
+1. [Download or clone this repository](https://github.com/runembp/CRMChromeTools)
+2. Open Chrome and navigate to `chrome://extensions`
+3. Enable **Developer mode** (toggle in the top-right corner)
+4. Click **Load unpacked** and select the `dist/` folder
+
+The extension icon will appear in the toolbar. Pin it for easy access.
+
+> **Ribbon Toolbar** requires a local config file to target your CRM URL — see [Local deployment configuration](#local-deployment-configuration) below.
+
+---
+
 ## Development Setup
 
 ### Prerequisites
@@ -22,14 +37,11 @@ npm run watch       # Watch mode — rebuilds + lints on file changes
 npm run check       # TypeScript type-check + ESLint
 ```
 
-### Load the extension in Chrome
+### Load the extension in Chrome (after building)
 
-1. Run `npm run build` to produce the `dist/` folder
-2. Open Chrome and navigate to `chrome://extensions`
-3. Enable **Developer mode** (toggle in the top-right corner)
-4. Click **Load unpacked** and select the `dist/` folder
-
-The extension icon will appear in the toolbar. Pin it for easy access.
+1. Open Chrome and navigate to `chrome://extensions`
+2. Enable **Developer mode** (toggle in the top-right corner)
+3. Click **Load unpacked** and select the `dist/` folder
 
 ### Local deployment configuration
 
