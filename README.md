@@ -1,4 +1,4 @@
-# MojnTools
+# DynamicsCat
 
 A Chrome Extension for Dynamics CRM 2016 — helper tools for form field inspection, option set browsing, and ribbon toolbar automation.
 
@@ -61,7 +61,7 @@ Then rebuild. `crm.config.json` is gitignored and never committed.
 ## Project Structure
 
 ```
-CRMChromeTools/
+DynamicsCat/
 ├── manifest.json              # Chrome Extension manifest (MV3) — no deployment URLs
 ├── crm.config.example.json    # Template for local deployment config (copy → crm.config.json)
 ├── build.js                   # esbuild build script; merges crm.config.json into dist/manifest.json
