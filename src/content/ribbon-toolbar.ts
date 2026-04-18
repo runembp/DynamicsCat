@@ -47,9 +47,9 @@ function injectStyles(): void {
   style.textContent = `
 #crm-tools-ribbon-toolbar .navTabButtonLink { cursor: pointer; text-decoration: none; }
 .crt-dropdown-btn {
-  display: block; width: 100%; padding: 6px 12px;
+  display: block; width: 100%; padding: 8px 16px;
   background: transparent; border: none; border-radius: 3px;
-  color: #fff; font-size: 13px; font-family: Segoe UI, Arial, sans-serif;
+  color: #fff; font-size: 14px; font-family: Segoe UI, Arial, sans-serif;
   cursor: pointer; text-align: left; white-space: nowrap;
 }
 .crt-dropdown-btn:hover { background: rgba(255,255,255,0.2); }
@@ -106,7 +106,7 @@ function buildToolbar(): void {
     'border-radius: 4px',
     'box-shadow: 0 4px 12px rgba(0,0,0,0.3)',
     'padding: 4px',
-    'min-width: 160px',
+    'min-width: 200px',
     'display: none',
   ].join('; ');
 
@@ -131,7 +131,7 @@ function buildToolbar(): void {
 
   const showHiddenBtn = document.createElement('button');
   showHiddenBtn.className = 'crt-dropdown-btn';
-  showHiddenBtn.textContent = '👁 Show Hidden Fields';
+  showHiddenBtn.textContent = '👁 Hidden Fields';
   showHiddenBtn.addEventListener('click', () => {
     dropdown.style.display = 'none';
     sendAction('injectShowHiddenFields');
