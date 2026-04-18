@@ -6,6 +6,39 @@
 const TOOLBAR_ID = 'crm-tools-ribbon-toolbar';
 const STYLE_ID   = 'crm-tools-ribbon-style';
 const DROPDOWN_ID = 'crm-tools-ribbon-dropdown';
+const CTX_BANNER_ID = 'crm-tools-ctx-banner';
+
+/** Show a persistent banner when the extension context has been invalidated. */
+function showContextInvalidatedBanner(): void {
+  if (document.getElementById(CTX_BANNER_ID)) return;
+  const banner = document.createElement('div');
+  banner.id = CTX_BANNER_ID;
+  banner.style.cssText = [
+    'position: fixed', 'top: 0', 'left: 0', 'right: 0',
+    'z-index: 2147483647', 'background: #c0392b', 'color: #fff',
+    'font-family: Segoe UI, Arial, sans-serif', 'font-size: 13px',
+    'padding: 8px 16px', 'text-align: center',
+  ].join('; ');
+  banner.textContent = '⚠️ DynamicsCat was reloaded — please refresh this tab to restore the toolbar.';
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '✕';
+  closeBtn.style.cssText = 'margin-left: 12px; background: transparent; border: none; color: #fff; cursor: pointer; font-size: 15px;';
+  closeBtn.addEventListener('click', () => banner.remove());
+  banner.appendChild(closeBtn);
+  document.body.prepend(banner);
+}
+
+/** Send a message to the background service worker, handling invalidated contexts gracefully. */
+function sendAction(action: string): void {
+  try {
+    chrome.runtime.sendMessage({ action });
+  } catch {
+    // Extension was reloaded/updated while the tab was open. Chrome invalidates the
+    // runtime context but DOM event listeners remain live — any chrome.runtime call
+    // will throw "Extension context invalidated". Prompt the user to refresh.
+    showContextInvalidatedBanner();
+  }
+}
 
 function injectStyles(): void {
   if (document.getElementById(STYLE_ID)) return;
@@ -51,7 +84,11 @@ function buildToolbar(): void {
   imgContainer.className = 'navTabButtonImageContainer';
 
   const icon = document.createElement('img');
-  icon.src = chrome.runtime.getURL('icons/icon32.png');
+  let iconSrc = '';
+  try {
+    iconSrc = chrome.runtime.getURL('icons/icon32.png');
+  } catch { /* context already invalid — icon will be missing, banner shown on first click */ }
+  icon.src = iconSrc;
   icon.alt = 'DynamicsCat';
   icon.style.cssText = 'width:24px;height:24px;display:block;';
 
@@ -78,7 +115,7 @@ function buildToolbar(): void {
   allFieldsBtn.textContent = '📋 All Fields';
   allFieldsBtn.addEventListener('click', () => {
     dropdown.style.display = 'none';
-    chrome.runtime.sendMessage({ action: 'injectAllFields' });
+    sendAction('injectAllFields');
   });
 
   const optionSetsBtn = document.createElement('button');
@@ -86,7 +123,7 @@ function buildToolbar(): void {
   optionSetsBtn.textContent = '🔘 Option Sets';
   optionSetsBtn.addEventListener('click', () => {
     dropdown.style.display = 'none';
-    chrome.runtime.sendMessage({ action: 'injectOptionSets' });
+    sendAction('injectOptionSets');
   });
 
   dropdown.appendChild(allFieldsBtn);
@@ -97,7 +134,7 @@ function buildToolbar(): void {
   showHiddenBtn.textContent = '👁 Show Hidden Fields';
   showHiddenBtn.addEventListener('click', () => {
     dropdown.style.display = 'none';
-    chrome.runtime.sendMessage({ action: 'injectShowHiddenFields' });
+    sendAction('injectShowHiddenFields');
   });
 
   dropdown.appendChild(showHiddenBtn);
