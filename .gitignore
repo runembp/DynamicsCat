@@ -19,3 +19,6 @@ npm-debug.log*
 
 # TypeScript incremental build
 *.tsbuildinfo
+
+# Local environment config (contains deployment-specific URLs — do not commit)
+crm.config.json

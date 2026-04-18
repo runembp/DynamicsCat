@@ -1,6 +1,6 @@
 import * as esbuild from 'esbuild';
 import { ESLint } from 'eslint';
-import { cpSync, copyFileSync, mkdirSync } from 'node:fs';
+import { cpSync, copyFileSync, mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 
 const isDev = process.argv.includes('--dev') || process.argv.includes('--watch');
 const isWatch = process.argv.includes('--watch');
@@ -28,12 +28,25 @@ function copyStatics() {
   mkdirSync('dist/popup', { recursive: true });
   mkdirSync('dist/content', { recursive: true });
   cpSync('icons', 'dist/icons', { recursive: true });
-  copyFileSync('manifest.json', 'dist/manifest.json');
+  generateManifest();
   copyFileSync('src/popup/popup.html', 'dist/popup/popup.html');
   copyFileSync('src/popup/popup.css', 'dist/popup/popup.css');
   copyFileSync('src/content/all-fields.css', 'dist/content/all-fields.css');
   copyFileSync('src/content/option-sets.css', 'dist/content/option-sets.css');
   copyFileSync('src/content/show-hidden-fields.css', 'dist/content/show-hidden-fields.css');
+}
+
+/** Merge manifest.json with crm.config.json (if present) and write to dist/manifest.json. */
+function generateManifest() {
+  const base = JSON.parse(readFileSync('manifest.json', 'utf8'));
+  if (existsSync('crm.config.json')) {
+    const local = JSON.parse(readFileSync('crm.config.json', 'utf8'));
+    if (local.content_scripts) base.content_scripts = local.content_scripts;
+    console.log('crm.config.json loaded — content_scripts injected into dist/manifest.json');
+  } else {
+    console.log('crm.config.json not found — building without content_scripts (copy crm.config.example.json to configure)');
+  }
+  writeFileSync('dist/manifest.json', JSON.stringify(base, null, 2));
 }
 
 /** Run ESLint over src/ and print any findings. */
