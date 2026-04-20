@@ -1,7 +1,7 @@
 // Injected into CRM form frames via chrome.scripting.executeScript.
 // Reads all Xrm attributes and renders a side-panel with a sortable table.
 
-import { debounce, buildLabelMap, makeDraggable, copyToClipboard } from './shared';
+import { debounce, buildLabelMap, makeDraggable, copyToClipboard } from '../shared';
 
 const PANEL_ID = 'crm-tools-fields-panel';
 const STYLE_ID = 'crm-tools-fields-style';

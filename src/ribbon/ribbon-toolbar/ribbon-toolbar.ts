@@ -57,9 +57,17 @@ function injectStyles(): void {
 }
 .crt-dropdown-btn:hover { background: #f1f3f4; }
 .crt-dropdown-btn:active { background: #e8eaed; }
+.crt-dropdown-btn.crt-active { background: rgba(46,125,50,0.08); }
+.crt-dropdown-btn.crt-active:hover { background: rgba(46,125,50,0.14); }
 .crt-btn-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.crt-btn-active-dot { width: 8px; height: 8px; border-radius: 50%; background: #2e7d32; margin-left: auto; flex-shrink: 0; display: none; }
+.crt-dropdown-btn.crt-active .crt-btn-active-dot { display: block; }
   `;
   (document.head || document.documentElement).appendChild(style);
+}
+
+function setButtonActive(btn: HTMLButtonElement, active: boolean): void {
+  btn.classList.toggle('crt-active', active);
 }
 
 function buildToolbar(): void {
@@ -122,8 +130,11 @@ function buildToolbar(): void {
     iconEl.textContent = icon;
     const labelEl = document.createElement('span');
     labelEl.textContent = label;
+    const dot = document.createElement('span');
+    dot.className = 'crt-btn-active-dot';
     btn.appendChild(iconEl);
     btn.appendChild(labelEl);
+    btn.appendChild(dot);
     return btn;
   }
 
@@ -171,6 +182,10 @@ function buildToolbar(): void {
       const rect = wrapper.getBoundingClientRect();
       dropdown.style.top  = rect.bottom + 'px';
       dropdown.style.left = rect.left + 'px';
+      // Reflect toggle state written by MAIN-world content scripts via dataset
+      const ds = document.documentElement.dataset;
+      setButtonActive(showHiddenBtn, ds['dynamicsCatHiddenActive'] === '1');
+      setButtonActive(dirtyFieldsBtn, ds['dynamicsCatDirtyActive'] === '1');
       dropdown.style.display = 'block';
     }
   });

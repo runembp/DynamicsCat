@@ -10,11 +10,11 @@ const options = {
   entryPoints: {
     'background': 'src/background.ts',
     'popup/popup': 'src/popup/popup.ts',
-    'content/all-fields': 'src/content/all-fields.ts',
-    'content/option-sets': 'src/content/option-sets.ts',
-    'content/show-hidden-fields': 'src/content/show-hidden-fields.ts',
-    'content/dirty-fields': 'src/content/dirty-fields.ts',
-    'content/ribbon-toolbar': 'src/ribbon/ribbon-toolbar.ts',
+    'content/all-fields': 'src/content/all-fields/all-fields.ts',
+    'content/option-sets': 'src/content/option-sets/option-sets.ts',
+    'content/show-hidden-fields': 'src/content/show-hidden-fields/show-hidden-fields.ts',
+    'content/dirty-fields': 'src/content/dirty-fields/dirty-fields.ts',
+    'content/ribbon-toolbar': 'src/ribbon/ribbon-toolbar/ribbon-toolbar.ts',
   },
   bundle: true,
   outdir: 'dist',
@@ -32,10 +32,10 @@ function copyStatics() {
   copyFileSync('manifest.json', 'dist/manifest.json');
   copyFileSync('src/popup/popup.html', 'dist/popup/popup.html');
   copyFileSync('src/popup/popup.css', 'dist/popup/popup.css');
-  copyFileSync('src/content/option-sets.css', 'dist/content/option-sets.css');
-  copyFileSync('src/content/all-fields.css', 'dist/content/all-fields.css');
-  copyFileSync('src/content/show-hidden-fields.css', 'dist/content/show-hidden-fields.css');
-  copyFileSync('src/content/dirty-fields.css',       'dist/content/dirty-fields.css');
+  copyFileSync('src/content/option-sets/option-sets.css', 'dist/content/option-sets.css');
+  copyFileSync('src/content/all-fields/all-fields.css', 'dist/content/all-fields.css');
+  copyFileSync('src/content/show-hidden-fields/show-hidden-fields.css', 'dist/content/show-hidden-fields.css');
+  copyFileSync('src/content/dirty-fields/dirty-fields.css', 'dist/content/dirty-fields.css');
 }
 
 /** Run ESLint over src/ and print any findings. */

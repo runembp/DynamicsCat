@@ -1,7 +1,7 @@
 // Injected into CRM form frames via chrome.scripting.executeScript.
 // Reads all optionset/multiselectoptionset attributes and renders a side-panel.
 
-import { debounce, buildLabelMap, makeDraggable, copyToClipboard } from './shared';
+import { debounce, buildLabelMap, makeDraggable, copyToClipboard } from '../shared';
 
 const PANEL_ID= 'crm-tools-optionsets-panel';
 const STYLE_ID = 'crm-tools-optionsets-style';

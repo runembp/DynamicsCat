@@ -77,6 +77,7 @@ function main(): void {
     window.__dynamicsCatDirtyTracking = false;
     window.__dynamicsCatDirtyHandler = undefined;
     window.__dynamicsCatDirtyFields = undefined;
+    try { (window.top ?? window).document.documentElement.dataset['dynamicsCatDirtyActive'] = '0'; } catch { /* cross-origin */ }
     showToast('🔴 Dirty field tracking disabled');
     return;
   }
@@ -105,6 +106,7 @@ function main(): void {
   if (trackedFields.size > 0) injectHighlights(Array.from(trackedFields));
 
   window.__dynamicsCatDirtyTracking = true;
+  try { (window.top ?? window).document.documentElement.dataset['dynamicsCatDirtyActive'] = '1'; } catch { /* cross-origin */ }
   showToast('🟢 Dirty field tracking enabled');
 }
 
