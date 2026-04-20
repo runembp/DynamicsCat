@@ -22,7 +22,7 @@
   color: #1e64c8; border-bottom: 1px solid #c5d8fb; flex-shrink: 0;
 }
 #crm-tools-optionsets-panel .cop-body { overflow-y: auto; overflow-x: auto; flex: 1; }
-#crm-tools-optionsets-panel table { border-collapse: collapse; }
+#crm-tools-optionsets-panel table { width: 100%; border-collapse: collapse; }
 #crm-tools-optionsets-panel thead th {
   position: sticky; top: 0; background: #f0f4ff;
   border-bottom: 2px solid #1e64c8; padding: 7px 10px; text-align: left;

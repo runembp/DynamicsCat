@@ -34,7 +34,7 @@
 #crm-tools-fields-panel .cfp-copy-val:hover { background: #c5d8fb; border-radius: 3px; }
 #crm-tools-fields-panel .cfp-copy-val.cfp-copied { background: #b7f0c8; border-bottom-color: #2a9c52; border-radius: 3px; }
 #crm-tools-fields-panel .cfp-body { overflow-y: auto; overflow-x: auto; flex: 1; }
-#crm-tools-fields-panel table { border-collapse: collapse; }
+#crm-tools-fields-panel table { width: 100%; border-collapse: collapse; }
 #crm-tools-fields-panel thead th {
   position: sticky; top: 0; background: #f0f4ff;
   border-bottom: 2px solid #1e64c8; padding: 7px 10px; text-align: left;
