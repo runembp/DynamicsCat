@@ -32,7 +32,7 @@ function injectStyles(): void {
   style.id = STYLE_ID;
   style.textContent = `
 #crm-tools-fields-panel {
-  position: fixed; top: 0; right: 0; width: auto; min-width: 420px; max-width: 90vw; max-height: 90vh;
+  position: fixed; top: 0; right: 0; width: auto; min-width: 550px; max-width: 90vw; max-height: 90vh;
   background: #fff; border: 2px solid #1e64c8;
   box-shadow: -4px 0 16px rgba(0,0,0,0.18);
   z-index: 2147483647; display: flex; flex-direction: column;
