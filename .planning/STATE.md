@@ -88,6 +88,7 @@ None.
 | 8 | Perf: debounce all-fields search input (100ms) | 2026-04-18 | 8f0a0f7 | .planning/quick/20260418-search-debounce |
 | 9 | Rename extension from CRMChromeTools/MojnTools to DynamicsCat | 2026-04-18 | 3d9d629 | .planning/quick/260418-dc9-rename-extension-from-crmchrometools-moj |
 | 10 | Fix toolbar disappearing: observe document.body instead of #crmMasthead | 2026-04-18 | 21dabd9 | .planning/quick/260418-gd0-fix-dynamicscat-toolbar-disappearing-fro |
+| 11 | Exclude Advanced Find popup from ribbon-toolbar injection | 2026-04-20 | 9b31ef2 | .planning/quick/260420-bdi-exclude-advanced-find-popup-from-ribbon- |
 
 ---
 
