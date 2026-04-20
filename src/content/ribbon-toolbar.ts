@@ -202,8 +202,14 @@ function startObserver(): void {
 }
 
 /** Returns true when the page is a Dynamics CRM or Dynamics 365 page.
- *  Detects CRM 2016 via body[scroll=no] and Dynamics 365 via div[data-id=topBar]. */
+ *  Detects CRM 2016 via body[scroll=no] and Dynamics 365 via div[data-id=topBar].
+ *  Excludes known CRM dialog/popup pages (e.g. Advanced Find) that never have #navBar —
+ *  injecting the MutationObserver into those causes runaway DOM querying and browser hangs. */
 function isCrmPage(): boolean {
+  const path   = window.location.pathname.toLowerCase();
+  const search = window.location.search.toLowerCase();
+  if (path.includes('advancedfind') || search.includes('advancedfind')) return false;
+
   const mainBody = document.querySelectorAll('body[scroll=no]');
   const topBar   = document.querySelector('div[data-id=topBar]');
   return (mainBody && mainBody.length > 0) || topBar !== null;
