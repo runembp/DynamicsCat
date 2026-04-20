@@ -14,7 +14,7 @@ const options = {
     'content/option-sets': 'src/content/option-sets.ts',
     'content/show-hidden-fields': 'src/content/show-hidden-fields.ts',
     'content/dirty-fields': 'src/content/dirty-fields.ts',
-    'content/ribbon-toolbar': 'src/content/ribbon-toolbar.ts',
+    'content/ribbon-toolbar': 'src/ribbon/ribbon-toolbar.ts',
   },
   bundle: true,
   outdir: 'dist',
