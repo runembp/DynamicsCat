@@ -84,7 +84,11 @@ function main(): void {
   }
 
   // Toggle on: subscribe onChange to every attribute and highlight as fields change.
+  // Seed with any attributes already dirty at enable time.
   const trackedFields = new Set<string>();
+  Xrm.Page.data.entity.attributes.forEach((attr) => {
+    if (attr.getIsDirty()) trackedFields.add(attr.getName());
+  });
   window.__dynamicsCatDirtyFields = trackedFields;
 
   const handler = (ctx?: Xrm.Events.EventContext): void => {
@@ -99,6 +103,8 @@ function main(): void {
   Xrm.Page.data.entity.attributes.forEach((attr) => {
     attr.addOnChange(handler);
   });
+
+  if (trackedFields.size > 0) injectHighlights(Array.from(trackedFields));
 
   window.__dynamicsCatDirtyTracking = true;
   showToast('🟢 Dirty field tracking enabled');
