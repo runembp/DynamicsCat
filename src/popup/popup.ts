@@ -22,4 +22,5 @@ document.addEventListener('DOMContentLoaded', () => {
   bindButton('btn-all-fields',        'content/all-fields.js');
   bindButton('btn-show-option-sets',  'content/option-sets.js');
   bindButton('btn-show-hidden-fields','content/show-hidden-fields.js');
+  bindButton('btn-dirty-fields',       'content/dirty-fields.js');
 });
