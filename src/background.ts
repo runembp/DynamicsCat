@@ -5,6 +5,7 @@ const ACTION_SCRIPTS: Record<string, string> = {
   injectOptionSets:       'content/option-sets.js',
   injectShowHiddenFields: 'content/show-hidden-fields.js',
   injectDirtyFields:      'content/dirty-fields.js',
+  openOnApi:              'content/open-on-api.js',
 };
 
 chrome.runtime.onMessage.addListener((message, sender) => {

@@ -118,8 +118,9 @@ function buildToolbar(): void {
     'border-radius: 8px',
     'box-shadow: 0 2px 10px rgba(0,0,0,0.18)',
     'padding: 8px 0',
-    'min-width: 220px',
+    'min-width: 400px',
     'display: none',
+    'grid-template-columns: 1fr 1fr',
   ].join('; ');
 
   function makeDropdownBtn(icon: string, label: string): HTMLButtonElement {
@@ -138,6 +139,9 @@ function buildToolbar(): void {
     return btn;
   }
 
+  // --- Left column ---
+  const colLeft = document.createElement('div');
+
   const allFieldsBtn = makeDropdownBtn('📋', 'All Fields');
   allFieldsBtn.addEventListener('click', () => {
     dropdown.style.display = 'none';
@@ -150,16 +154,11 @@ function buildToolbar(): void {
     sendAction('injectOptionSets');
   });
 
-  dropdown.appendChild(allFieldsBtn);
-  dropdown.appendChild(optionSetsBtn);
-
   const showHiddenBtn = makeDropdownBtn('👁', 'Hidden Fields');
   showHiddenBtn.addEventListener('click', () => {
     dropdown.style.display = 'none';
     sendAction('injectShowHiddenFields');
   });
-
-  dropdown.appendChild(showHiddenBtn);
 
   const dirtyFieldsBtn = makeDropdownBtn('✏️', 'Dirty Fields');
   dirtyFieldsBtn.addEventListener('click', () => {
@@ -167,7 +166,25 @@ function buildToolbar(): void {
     sendAction('injectDirtyFields');
   });
 
-  dropdown.appendChild(dirtyFieldsBtn);
+  colLeft.appendChild(allFieldsBtn);
+  colLeft.appendChild(optionSetsBtn);
+  colLeft.appendChild(showHiddenBtn);
+  colLeft.appendChild(dirtyFieldsBtn);
+
+  // --- Right column ---
+  const colRight = document.createElement('div');
+  colRight.style.cssText = 'border-left: 1px solid #e8eaed;';
+
+  const openOnApiBtn = makeDropdownBtn('🔗', 'Open on API');
+  openOnApiBtn.addEventListener('click', () => {
+    dropdown.style.display = 'none';
+    sendAction('openOnApi');
+  });
+
+  colRight.appendChild(openOnApiBtn);
+
+  dropdown.appendChild(colLeft);
+  dropdown.appendChild(colRight);
 
   // Append dropdown to body so it escapes the ribbon's stacking context
   document.body.appendChild(dropdown);
@@ -175,7 +192,7 @@ function buildToolbar(): void {
   // --- Toggle click handler ---
   wrapper.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (dropdown.style.display === 'block') {
+    if (dropdown.style.display === 'grid') {
       dropdown.style.display = 'none';
     } else {
       // Recalculate position each time in case page has scrolled
@@ -186,7 +203,7 @@ function buildToolbar(): void {
       const ds = document.documentElement.dataset;
       setButtonActive(showHiddenBtn, ds['dynamicsCatHiddenActive'] === '1');
       setButtonActive(dirtyFieldsBtn, ds['dynamicsCatDirtyActive'] === '1');
-      dropdown.style.display = 'block';
+      dropdown.style.display = 'grid';
     }
   });
 

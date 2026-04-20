@@ -14,6 +14,7 @@ const options = {
     'content/option-sets': 'src/content/option-sets/option-sets.ts',
     'content/show-hidden-fields': 'src/content/show-hidden-fields/show-hidden-fields.ts',
     'content/dirty-fields': 'src/content/dirty-fields/dirty-fields.ts',
+    'content/open-on-api':  'src/content/open-on-api/open-on-api.ts',
     'content/ribbon-toolbar': 'src/ribbon/ribbon-toolbar/ribbon-toolbar.ts',
   },
   bundle: true,

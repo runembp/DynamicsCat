@@ -12,23 +12,33 @@
     <span class="header-title">DynamicsCat</span>
   </header>
 
-  <main>
-    <button id="btn-all-fields" class="tool-btn">
-      <span class="btn-icon">📋</span>
-      <span class="btn-label">All Fields</span>
-    </button>
-    <button id="btn-show-option-sets" class="tool-btn">
-      <span class="btn-icon">🔘</span>
-      <span class="btn-label">Show Option Sets</span>
-    </button>
-    <button id="btn-show-hidden-fields" class="tool-btn">
-      <span class="btn-icon">👁</span>
-      <span class="btn-label">Show Hidden Fields</span>
-    </button>
-    <button id="btn-dirty-fields" class="tool-btn">
-      <span class="btn-icon">✏️</span>
-      <span class="btn-label">Dirty Fields</span>
-    </button>
+  <main class="two-col">
+    <section class="tool-group">
+      <h2 class="tool-group-label">🛠 Tools</h2>
+      <button id="btn-all-fields" class="tool-btn">
+        <span class="btn-icon">📋</span>
+        <span class="btn-label">All Fields</span>
+      </button>
+      <button id="btn-show-option-sets" class="tool-btn">
+        <span class="btn-icon">🔘</span>
+        <span class="btn-label">Show Option Sets</span>
+      </button>
+      <button id="btn-show-hidden-fields" class="tool-btn">
+        <span class="btn-icon">👁</span>
+        <span class="btn-label">Show Hidden Fields</span>
+      </button>
+      <button id="btn-dirty-fields" class="tool-btn">
+        <span class="btn-icon">✏️</span>
+        <span class="btn-label">Dirty Fields</span>
+      </button>
+    </section>
+    <section class="tool-group tool-group-right">
+      <h2 class="tool-group-label">🌐 API</h2>
+      <button id="btn-open-on-api" class="tool-btn tool-btn-compact">
+        <span class="btn-icon">🔗</span>
+        <span class="btn-label">Open on API</span>
+      </button>
+    </section>
   </main>
 
   <script src="popup.js"></script>

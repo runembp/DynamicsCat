@@ -40,14 +40,41 @@ main {
   padding: 8px 0;
 }
 
+main.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 0;
+}
+
+/* ── Tool group ───────────────────────────────────── */
+.tool-group {
+  padding: 8px 0;
+}
+
+.tool-group-right {
+  border-left: 1px solid #e8eaed;
+}
+
+.tool-group-label {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #80868b;
+  padding: 4px 12px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ── Tool button ──────────────────────────────────── */
 .tool-btn {
   display: flex;
   align-items: center;
   width: 100%;
   height: 40px;
-  padding: 0 16px;
-  gap: 12px;
+  padding: 0 12px;
+  gap: 8px;
   background: transparent;
   border: none;
   font-family: inherit;
@@ -64,6 +91,20 @@ main {
 
 .tool-btn:active {
   background: #e8eaed;
+}
+
+/* Compact variant for right column */
+.tool-btn-compact {
+  height: 32px;
+  font-size: 12px;
+  padding: 0 10px;
+  gap: 6px;
+}
+
+.tool-btn-compact .btn-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 13px;
 }
 
 .btn-icon {

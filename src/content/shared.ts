@@ -84,3 +84,40 @@ export function copyToClipboard(text: string): void {
     execCommandCopy(text);
   }
 }
+
+const TOAST_CONTAINER_ID = 'crm-tools-toast-container';
+
+export function showToast(message: string, type: 'info' | 'warn' = 'info'): void {
+  let container = document.getElementById(TOAST_CONTAINER_ID);
+  if (!container) {
+    container = document.createElement('div');
+    container.id = TOAST_CONTAINER_ID;
+    container.style.cssText = [
+      'position: fixed', 'bottom: 24px', 'right: 24px',
+      'z-index: 2147483647', 'display: flex', 'flex-direction: column', 'gap: 8px',
+      'pointer-events: none',
+    ].join('; ');
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.style.cssText = [
+    'background: ' + (type === 'warn' ? '#e65100' : '#323232'),
+    'color: #fff',
+    'font-family: "Google Sans", Roboto, "Segoe UI", Arial, sans-serif',
+    'font-size: 13px',
+    'padding: 10px 16px',
+    'border-radius: 6px',
+    'box-shadow: 0 2px 8px rgba(0,0,0,0.25)',
+    'pointer-events: auto',
+    'opacity: 1',
+    'transition: opacity 0.3s ease',
+  ].join('; ');
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 350);
+  }, 3500);
+}
