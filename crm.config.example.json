@@ -1,4 +1,0 @@
-{
-  "_comment": "Copy this file to crm.config.json and fill in your CRM deployment URL(s). crm.config.json is gitignored.",
-  "urls": ["https://YOUR_SUBDOMAIN.YOUR_DOMAIN.TLD/YOUR_CRM_PATH"]
-}

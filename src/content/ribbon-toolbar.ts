@@ -3,9 +3,6 @@
 // mirroring the crm-power-pane-button structure.
 // Does NOT touch Xrm — delegates actions to background via sendMessage.
 
-// Injected by build.js from crm.config.json urls[]. Empty array = trust manifest matching.
-declare const __CRM_URLS__: string[];
-
 const TOOLBAR_ID = 'crm-tools-ribbon-toolbar';
 const STYLE_ID   = 'crm-tools-ribbon-style';
 const DROPDOWN_ID = 'crm-tools-ribbon-dropdown';
@@ -204,21 +201,13 @@ function startObserver(): void {
   }).observe(root, { childList: true, subtree: true });
 }
 
-/** Returns true if the current page URL matches any configured CRM URL (case-insensitive prefix).
- *  If no URLs are configured, returns true to trust the manifest's own match patterns. */
-function isConfiguredUrl(): boolean {
-  if (!__CRM_URLS__.length) return true;
-  const current = (location.origin + location.pathname).toLowerCase().replace(/\/+$/, '');
-  return __CRM_URLS__.some(url => {
-    try {
-      const { origin, pathname } = new URL(url);
-      const base = (origin + pathname).toLowerCase().replace(/\/+$/, '');
-      return current === base || current.startsWith(base + '/');
-    } catch { return false; }
-  });
+/** Returns true when the page is a Dynamics CRM page.
+ *  ClientGlobalContext.js.aspx is loaded on every CRM page and is unique to the platform. */
+function isCrmPage(): boolean {
+  return document.querySelector('script[src*="ClientGlobalContext"]') !== null;
 }
 
-if (isConfiguredUrl()) {
+if (isCrmPage()) {
   buildToolbar();
   startObserver();
 }
