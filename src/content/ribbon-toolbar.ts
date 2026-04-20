@@ -150,6 +150,14 @@ function buildToolbar(): void {
 
   dropdown.appendChild(showHiddenBtn);
 
+  const dirtyFieldsBtn = makeDropdownBtn('✏️', 'Dirty Fields');
+  dirtyFieldsBtn.addEventListener('click', () => {
+    dropdown.style.display = 'none';
+    sendAction('injectDirtyFields');
+  });
+
+  dropdown.appendChild(dirtyFieldsBtn);
+
   // Append dropdown to body so it escapes the ribbon's stacking context
   document.body.appendChild(dropdown);
 
