@@ -201,10 +201,12 @@ function startObserver(): void {
   }).observe(root, { childList: true, subtree: true });
 }
 
-/** Returns true when the page is a Dynamics CRM page.
- *  ClientGlobalContext.js.aspx is loaded on every CRM page and is unique to the platform. */
+/** Returns true when the page is a Dynamics CRM or Dynamics 365 page.
+ *  Detects CRM 2016 via body[scroll=no] and Dynamics 365 via div[data-id=topBar]. */
 function isCrmPage(): boolean {
-  return document.querySelector('script[src*="ClientGlobalContext"]') !== null;
+  const mainBody = document.querySelectorAll('body[scroll=no]');
+  const topBar   = document.querySelector('div[data-id=topBar]');
+  return (mainBody && mainBody.length > 0) || topBar !== null;
 }
 
 if (isCrmPage()) {
