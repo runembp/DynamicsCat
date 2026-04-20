@@ -1,11 +1,4 @@
 {
-  "_comment": "Copy this file to crm.config.json and fill in your deployment URL. crm.config.json is gitignored.",
-  "content_scripts": [
-    {
-      "matches": ["*://YOUR_SUBDOMAIN.YOUR_DOMAIN.TLD/YOUR_PATH*"],
-      "js": ["content/ribbon-toolbar.js"],
-      "run_at": "document_idle",
-      "all_frames": true
-    }
-  ]
+  "_comment": "Copy this file to crm.config.json and fill in your CRM deployment URL(s). crm.config.json is gitignored.",
+  "urls": ["https://YOUR_SUBDOMAIN.YOUR_DOMAIN.TLD/YOUR_CRM_PATH"]
 }

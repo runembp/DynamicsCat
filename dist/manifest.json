@@ -42,13 +42,13 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*.vlpadr.net/velliv*"
+        "*://vlpadr.net/*"
       ],
       "js": [
         "content/ribbon-toolbar.js"
       ],
       "run_at": "document_idle",
-      "all_frames": true
+      "all_frames": false
     }
   ]
 }

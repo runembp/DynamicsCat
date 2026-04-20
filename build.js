@@ -5,6 +5,26 @@ import { cpSync, copyFileSync, mkdirSync, readFileSync, writeFileSync, existsSyn
 const isDev = process.argv.includes('--dev') || process.argv.includes('--watch');
 const isWatch = process.argv.includes('--watch');
 
+/** Read and parse crm.config.json, returning the parsed object or null if absent. */
+function readCrmConfig() {
+  if (!existsSync('crm.config.json')) return null;
+  return JSON.parse(readFileSync('crm.config.json', 'utf8'));
+}
+
+/** Validate and return the urls[] array from crm.config.json for use in esbuild define.
+ *  Watch mode requires a process restart to pick up config changes — same as today. */
+function loadCrmUrls() {
+  const cfg = readCrmConfig();
+  if (!cfg || !Array.isArray(cfg.urls)) return [];
+  for (const url of cfg.urls) {
+    try { new URL(url); }
+    catch { throw new Error(`crm.config.json: invalid URL in urls[]: "${url}"`); }
+  }
+  return cfg.urls;
+}
+
+const crmUrls = loadCrmUrls();
+
 /** @type {import('esbuild').BuildOptions} */
 const options = {
   entryPoints: {
@@ -22,6 +42,10 @@ const options = {
   sourcemap: isDev ? 'inline' : false,
   minify: !isDev,
   logLevel: 'info',
+  define: {
+    // Injected into ribbon-toolbar.ts at build time for runtime case-insensitive URL matching.
+    __CRM_URLS__: JSON.stringify(crmUrls),
+  },
 };
 
 function copyStatics() {
@@ -36,31 +60,62 @@ function copyStatics() {
   copyFileSync('src/content/show-hidden-fields.css', 'dist/content/show-hidden-fields.css');
 }
 
+/** Build a broad Chrome match pattern (hostname only) from a validated URL.
+ *  Path filtering is handled at runtime in ribbon-toolbar.ts for case-insensitive matching. */
+function hostPattern(url) {
+  return `*://${new URL(url).hostname}/*`;
+}
+
 /** Normalize a Chrome extension URL match pattern to lowercase (after the scheme).
- *  Hostnames are case-insensitive per DNS spec; paths are lowercased so that
- *  case typos in crm.config.json are tolerated and patterns match real CRM URLs
- *  regardless of how the user wrote them. */
+ *  Used only for the legacy content_scripts config format. */
 function normalizeMatchPattern(pattern) {
   const schemeEnd = pattern.indexOf('://');
   if (schemeEnd === -1) return pattern;
   return pattern.slice(0, schemeEnd + 3) + pattern.slice(schemeEnd + 3).toLowerCase();
 }
 
-/** Merge manifest.json with crm.config.json (if present) and write to dist/manifest.json. */
+/** Re-reads crm.config.json on every call so watch-mode manifests stay fresh. */
 function generateManifest() {
   const base = JSON.parse(readFileSync('manifest.json', 'utf8'));
-  if (existsSync('crm.config.json')) {
-    const local = JSON.parse(readFileSync('crm.config.json', 'utf8'));
-    if (local.content_scripts) {
-      base.content_scripts = local.content_scripts.map(script => ({
-        ...script,
-        matches: script.matches?.map(normalizeMatchPattern) ?? script.matches,
-      }));
-    }
-    console.log('crm.config.json loaded — content_scripts injected into dist/manifest.json');
-  } else {
+  const local = readCrmConfig();
+
+  if (!local) {
     console.log('crm.config.json not found — building without content_scripts (copy crm.config.example.json to configure)');
+    writeFileSync('dist/manifest.json', JSON.stringify(base, null, 2));
+    return;
   }
+
+  const hasUrls   = Array.isArray(local.urls)            && local.urls.length > 0;
+  const hasLegacy = Array.isArray(local.content_scripts) && local.content_scripts.length > 0;
+
+  if (hasUrls && hasLegacy) {
+    console.warn('crm.config.json warning: both "urls" and "content_scripts" present — "urls" takes precedence. Remove "content_scripts" to silence this warning.');
+  }
+
+  if (hasUrls) {
+    for (const url of local.urls) {
+      try { new URL(url); }
+      catch { throw new Error(`crm.config.json: invalid URL in urls[]: "${url}"`); }
+    }
+    const patterns = [...new Set(local.urls.map(hostPattern))];
+    base.content_scripts = [{
+      matches: patterns,
+      js: ['content/ribbon-toolbar.js'],
+      run_at: 'document_idle',
+      all_frames: false,
+    }];
+    console.log(`crm.config.json loaded — ${local.urls.length} URL(s), ${patterns.length} host pattern(s)`);
+  } else if (hasLegacy) {
+    console.warn('crm.config.json: "content_scripts" format is deprecated — migrate to "urls" array for case-insensitive matching.');
+    base.content_scripts = local.content_scripts.map(script => ({
+      ...script,
+      matches: script.matches?.map(normalizeMatchPattern) ?? script.matches,
+    }));
+    console.log('crm.config.json loaded (legacy) — content_scripts injected into dist/manifest.json');
+  } else {
+    console.log('crm.config.json found but no urls or content_scripts configured');
+  }
+
   writeFileSync('dist/manifest.json', JSON.stringify(base, null, 2));
 }
 
