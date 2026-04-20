@@ -1,7 +1,7 @@
 // Injected into CRM form frames via chrome.scripting.executeScript.
 // Reads all optionset/multiselectoptionset attributes and renders a side-panel.
 
-export {};
+import { debounce, buildLabelMap, makeDraggable, copyToClipboard } from './shared';
 
 const PANEL_ID= 'crm-tools-optionsets-panel';
 const STYLE_ID = 'crm-tools-optionsets-style';
@@ -20,17 +20,7 @@ function main(): void {
   }
 
   // Build label map from UI controls
-  const labelMap: Record<string, string> = {};
-  Xrm.Page.ui.controls.forEach((ctrl) => {
-    const name = ctrl.getName();
-    if (name) {
-      try {
-        labelMap[name] = (ctrl as Xrm.Controls.StandardControl).getLabel() || name;
-      } catch {
-        labelMap[name] = name;
-      }
-    }
-  });
+  const labelMap = buildLabelMap();
 
   // Filter to only optionset / multiselectoptionset attributes
   const attrs = Xrm.Page.data.entity.attributes.get().filter(
@@ -109,6 +99,12 @@ function injectStyles(): void {
 #crm-tools-optionsets-panel .cop-no-results {
   padding: 16px; text-align: center; color: #888; font-style: italic;
 }
+#crm-tools-optionsets-panel .cop-copy-val {
+  cursor: pointer; border-bottom: 1px dashed #1e64c8;
+  transition: background 0.15s;
+}
+#crm-tools-optionsets-panel .cop-copy-val:hover { background: #c5d8fb; border-radius: 3px; }
+#crm-tools-optionsets-panel .cop-copy-val.cop-copied { background: #b7f0c8; border-bottom-color: #2a9c52; border-radius: 3px; }
 #crm-tools-optionsets-panel .cop-options-list {
   margin: 0; padding: 0 0 0 14px; font-size: 11px; color: #666; list-style: disc;
 }
@@ -117,49 +113,17 @@ function injectStyles(): void {
   document.head.appendChild(style);
 }
 
-function makeDraggable(panel: HTMLElement, handle: HTMLElement, closeBtn: HTMLElement): void {
-  // Convert right-anchored to left-anchored so we can reposition freely
-  requestAnimationFrame(() => {
-    const rect = panel.getBoundingClientRect();
-    panel.style.left  = rect.left + 'px';
-    panel.style.top   = rect.top  + 'px';
-    panel.style.right = '';
+function makeCopySpan(display: string, copyValue: string): HTMLSpanElement {
+  const span = document.createElement('span');
+  span.className = 'cop-copy-val';
+  span.textContent = display;
+  span.title = `Click to copy: ${copyValue}`;
+  span.addEventListener('click', () => {
+    copyToClipboard(copyValue);
+    span.classList.add('cop-copied');
+    setTimeout(() => span.classList.remove('cop-copied'), 1200);
   });
-
-  let dragging = false;
-  let offsetX = 0;
-  let offsetY = 0;
-
-  const onMouseMove = (e: MouseEvent) => {
-    if (!dragging) return;
-    const x = Math.max(0, Math.min(e.clientX - offsetX, window.innerWidth  - panel.offsetWidth));
-    const y = Math.max(0, Math.min(e.clientY - offsetY, window.innerHeight - panel.offsetHeight));
-    panel.style.left = x + 'px';
-    panel.style.top  = y + 'px';
-  };
-
-  const onMouseUp = () => { dragging = false; handle.style.cursor = 'move'; };
-
-  handle.addEventListener('mousedown', (e) => {
-    if (closeBtn.contains(e.target as Node)) return;
-    dragging = true;
-    offsetX  = e.clientX - panel.offsetLeft;
-    offsetY  = e.clientY - panel.offsetTop;
-    handle.style.cursor = 'grabbing';
-    e.preventDefault();
-  });
-
-  document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup',   onMouseUp);
-
-  // Clean up document listeners when panel is removed
-  new MutationObserver((_, obs) => {
-    if (!document.contains(panel)) {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup',   onMouseUp);
-      obs.disconnect();
-    }
-  }).observe(document.body, { childList: true, subtree: true });
+  return span;
 }
 
 function buildPanel(
@@ -195,7 +159,16 @@ function buildPanel(
 
   const subheader = document.createElement('div');
   subheader.className = 'cop-subheader';
-  subheader.textContent = `Entity: ${entityName}  |  ID: ${entityId || '(new record)'}  |  ${attrs.length} option set field(s)`;
+  subheader.append('Entity: ');
+  subheader.appendChild(makeCopySpan(entityName, entityName));
+  subheader.append('  |  ID: ');
+  if (entityId) {
+    const cleanId = entityId.replace(/^\{|\}$/g, '');
+    subheader.appendChild(makeCopySpan(entityId, cleanId));
+  } else {
+    subheader.append('(new record)');
+  }
+  subheader.append(`  |  ${attrs.length} option set field(s)`);
   panel.appendChild(subheader);
 
   // Search bar
@@ -259,7 +232,8 @@ function buildPanel(
     ul.className = 'cop-options-list';
     options.forEach((opt) => {
       const li = document.createElement('li');
-      li.textContent = `${opt.value}: ${opt.text}`;
+      li.appendChild(makeCopySpan(String(opt.value), String(opt.value)));
+      li.append(`: ${opt.text}`);
       ul.appendChild(li);
     });
     tdOptions.appendChild(ul);
@@ -278,7 +252,7 @@ function buildPanel(
   noResults.textContent = 'No matching fields.';
   noResults.style.display = 'none';
 
-  searchInput.addEventListener('input', () => {
+  searchInput.addEventListener('input', debounce(() => {
     const q = searchInput.value.toLowerCase().trim();
     let visible = 0;
     tbody.querySelectorAll<HTMLTableRowElement>('tr').forEach((row) => {
@@ -289,7 +263,7 @@ function buildPanel(
       if (match) visible++;
     });
     noResults.style.display = visible === 0 ? '' : 'none';
-  });
+  }, 100));
 
   body.appendChild(table);
   body.appendChild(noResults);
