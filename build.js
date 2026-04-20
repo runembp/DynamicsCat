@@ -36,12 +36,29 @@ function copyStatics() {
   copyFileSync('src/content/show-hidden-fields.css', 'dist/content/show-hidden-fields.css');
 }
 
+/** Normalize the hostname portion of a Chrome extension URL match pattern to lowercase.
+ *  DNS hostnames are case-insensitive, so this ensures patterns match regardless of
+ *  how the domain is written in crm.config.json. */
+function normalizeMatchPattern(pattern) {
+  const schemeEnd = pattern.indexOf('://');
+  if (schemeEnd === -1) return pattern;
+  const afterScheme = schemeEnd + 3;
+  const pathStart = pattern.indexOf('/', afterScheme);
+  if (pathStart === -1) return pattern.slice(0, afterScheme) + pattern.slice(afterScheme).toLowerCase();
+  return pattern.slice(0, afterScheme) + pattern.slice(afterScheme, pathStart).toLowerCase() + pattern.slice(pathStart);
+}
+
 /** Merge manifest.json with crm.config.json (if present) and write to dist/manifest.json. */
 function generateManifest() {
   const base = JSON.parse(readFileSync('manifest.json', 'utf8'));
   if (existsSync('crm.config.json')) {
     const local = JSON.parse(readFileSync('crm.config.json', 'utf8'));
-    if (local.content_scripts) base.content_scripts = local.content_scripts;
+    if (local.content_scripts) {
+      base.content_scripts = local.content_scripts.map(script => ({
+        ...script,
+        matches: script.matches?.map(normalizeMatchPattern) ?? script.matches,
+      }));
+    }
     console.log('crm.config.json loaded — content_scripts injected into dist/manifest.json');
   } else {
     console.log('crm.config.json not found — building without content_scripts (copy crm.config.example.json to configure)');
