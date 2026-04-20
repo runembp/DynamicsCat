@@ -49,10 +49,8 @@ function showToast(message: string): void {
 function injectHighlights(names: string[]): void {
   document.getElementById(STYLE_ID)?.remove();
 
-  // CRM 2016 field containers use IDs: {name} (input), {name}_d (row wrapper), {name}_c (cell)
-  const selectors = names
-    .flatMap((n) => [`[id="${n}"]`, `[id="${n}_d"]`, `[id="${n}_c"]`])
-    .join(',\n');
+  // CRM 2016: {name}_d is the row wrapper containing both label and field control.
+  const selectors = names.map((n) => `[id="${n}_d"]`).join(',\n');
 
   const style = document.createElement('style');
   style.id = STYLE_ID;
