@@ -6,6 +6,7 @@ const ACTION_SCRIPTS: Record<string, string> = {
   injectShowHiddenFields: 'content/show-hidden-fields.js',
   injectDirtyFields:      'content/dirty-fields.js',
   openOnApi:              'content/open-on-api.js',
+  openNewestModified:     'content/open-newest-modified.js',
 };
 
 chrome.runtime.onMessage.addListener((message, sender) => {

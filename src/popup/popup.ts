@@ -73,4 +73,5 @@ document.addEventListener('DOMContentLoaded', () => {
   bindButton('btn-show-hidden-fields', 'injectShowHiddenFields');
   bindButton('btn-dirty-fields',       'injectDirtyFields');
   bindOpenOnApi();
+  bindButton('btn-open-newest-modified', 'openNewestModified');
 });

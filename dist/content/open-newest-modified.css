@@ -1,0 +1,140 @@
+/* ── DynamicsCat — Open Newest Modified Panel ────────────────────────────── */
+
+#crm-tools-newest-modified-panel {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  width: 340px;
+  background: #fff;
+  border: 2px solid #1e64c8;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  z-index: 2147483647;
+  overflow: hidden;
+  font-family: Segoe UI, Arial, sans-serif;
+  font-size: 13px;
+  color: #222;
+}
+
+#crm-tools-newest-modified-panel .cnm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1e64c8;
+  color: #fff;
+  padding: 10px 14px;
+  cursor: move;
+  user-select: none;
+}
+
+#crm-tools-newest-modified-panel .cnm-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#crm-tools-newest-modified-panel .cnm-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0.85;
+}
+
+#crm-tools-newest-modified-panel .cnm-close:hover {
+  opacity: 1;
+}
+
+#crm-tools-newest-modified-panel .cnm-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#crm-tools-newest-modified-panel .cnm-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#crm-tools-newest-modified-panel .cnm-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #80868b;
+  min-width: 54px;
+  flex-shrink: 0;
+}
+
+#crm-tools-newest-modified-panel .cnm-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid #c5d8fb;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #222;
+  outline: none;
+}
+
+#crm-tools-newest-modified-panel .cnm-input:focus {
+  border-color: #1e64c8;
+}
+
+#crm-tools-newest-modified-panel .cnm-input:disabled {
+  background: #f5f5f5;
+  color: #aaa;
+}
+
+#crm-tools-newest-modified-panel .cnm-sort-btn {
+  padding: 4px 10px;
+  border: 1px solid #c5d8fb;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 12px;
+  font-family: inherit;
+  color: #555;
+  cursor: pointer;
+}
+
+#crm-tools-newest-modified-panel .cnm-sort-btn:hover {
+  background: #e8f0fe;
+}
+
+#crm-tools-newest-modified-panel .cnm-sort-btn.cnm-sort-active {
+  background: #1e64c8;
+  color: #fff;
+  border-color: #1e64c8;
+}
+
+#crm-tools-newest-modified-panel .cnm-action-row {
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+#crm-tools-newest-modified-panel .cnm-open-btn {
+  padding: 7px 20px;
+  background: #1e64c8;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#crm-tools-newest-modified-panel .cnm-open-btn:hover:not(:disabled) {
+  background: #1557b0;
+}
+
+#crm-tools-newest-modified-panel .cnm-open-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
