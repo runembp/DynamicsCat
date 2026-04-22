@@ -188,7 +188,13 @@ async function main(): Promise<void> {
       const recordUrl = `${clientUrl}/api/data/${apiVersion}/${meta.EntitySetName}` +
         `?$select=${meta.PrimaryIdAttribute}&$orderby=${sortField}%20desc&$top=1`;
       console.log('[DynamicsCat] OData query:', recordUrl);
-      const res  = await fetch(recordUrl);
+      const res  = await fetch(recordUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'OData-MaxVersion': '4.0',
+          'OData-Version': '4.0',
+        },
+      });
       const json = await res.json() as { value: Record<string, string>[] };
 
       if (!json.value?.length) {
