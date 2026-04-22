@@ -48,7 +48,7 @@ const session = await joinSession({
             if (lintOutput) {
                 await session.log(`[lint-guard] ⚠ Lint errors in ${filePath}`, { level: "warning" });
                 return {
-                    additionalContext: `ESLint found issues in ${filePath} that must be fixed:\n\n${lintOutput}`,
+                    additionalContext: `ESLint found issues in ${filePath}:\n\n${lintOutput}`,
                 };
             } else {
                 await session.log(`[lint-guard] ✓`, { ephemeral: true });

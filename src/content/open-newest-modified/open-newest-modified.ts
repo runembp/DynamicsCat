@@ -186,7 +186,7 @@ async function main(): Promise<void> {
     openBtn.textContent = 'Opening…';
     try {
       const recordUrl = `${clientUrl}/api/data/${apiVersion}/${meta.EntitySetName}` +
-        `?$select=${meta.PrimaryIdAttribute}&$orderby=${sortField} desc&$top=1`;
+        `?$select=${meta.PrimaryIdAttribute}&$orderby=${sortField}%20desc&$top=1`;
       console.log('[DynamicsCat] OData query:', recordUrl);
       const res  = await fetch(recordUrl);
       const json = await res.json() as { value: Record<string, string>[] };
