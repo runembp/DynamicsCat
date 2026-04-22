@@ -93,5 +93,25 @@ DynamicsCat/
 - **All Fields** — Inspect every field on the active CRM form: name, value, type
 - **Option Sets** — List option set values and labels for all fields
 - **Show Hidden Fields** — Reveal fields hidden by form rules
+- **Dirty Fields** — Highlight fields modified since the form loaded
+- **Open on API** — Open the current record as raw JSON in the Web API
+- **Open Newest Modified** — Pick any entity and open its most recently modified or created record
 - **Ribbon Toolbar** — Floating toolbar auto-injected on CRM pages (configure via `crm.config.json`)
+
+---
+
+## Adding a New Tool
+
+When adding a new tool, **both surfaces must be updated together** — they must always stay in sync:
+
+| File | What to do |
+|------|-----------|
+| `src/popup/popup.html` | Add a `<button id="btn-<action>">` in the correct section |
+| `src/popup/popup.ts` | Bind the button with `bindButton('btn-<action>', '<action>')` |
+| `src/ribbon/ribbon-toolbar/ribbon-toolbar.ts` | Add a dropdown button via `makeDropdownBtn` and wire `sendAction('<action>')` |
+| `src/background.ts` | Add `<action>: { file: 'content/<script>.js' }` to `ACTION_CONFIGS` |
+| `src/content/<script>/` | Implement the content script (follow toggle + guard patterns) |
+| `build.js` | Add entry point + any CSS copy in `copyStatics()` |
+
+> **Rule:** A tool that appears in the popup must also appear in the ribbon dropdown, and vice versa. Never ship one without the other.
 

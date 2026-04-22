@@ -100,6 +100,7 @@
   font-family: inherit;
   color: #555;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 #crm-tools-newest-modified-panel .cnm-sort-btn:hover {

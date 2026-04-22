@@ -223,6 +223,7 @@ function injectStyles(): void {
 #${PANEL_ID} .cnm-sort-btn {
   padding: 4px 10px; border: 1px solid #c5d8fb; border-radius: 4px;
   background: #fff; font-size: 12px; font-family: inherit; color: #555; cursor: pointer;
+  white-space: nowrap;
 }
 #${PANEL_ID} .cnm-sort-btn:hover { background: #e8f0fe; }
 #${PANEL_ID} .cnm-sort-btn.cnm-sort-active { background: #1e64c8; color: #fff; border-color: #1e64c8; }

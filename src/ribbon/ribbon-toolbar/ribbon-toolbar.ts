@@ -181,7 +181,14 @@ function buildToolbar(): void {
     sendAction('openOnApi');
   });
 
+  const openNewestModifiedBtn = makeDropdownBtn('🕐', 'Open Newest Modified');
+  openNewestModifiedBtn.addEventListener('click', () => {
+    dropdown.style.display = 'none';
+    sendAction('openNewestModified');
+  });
+
   colRight.appendChild(openOnApiBtn);
+  colRight.appendChild(openNewestModifiedBtn);
 
   dropdown.appendChild(colLeft);
   dropdown.appendChild(colRight);
