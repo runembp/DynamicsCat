@@ -276,7 +276,7 @@ function injectStyles(): void {
   style.id = STYLE_ID;
   style.textContent = `
 #${PANEL_ID} {
-  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 340px;
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 380px;
   background: #fff; border: 2px solid #1e64c8; border-radius: 8px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.2);
   z-index: 2147483647; overflow: hidden;
@@ -322,9 +322,9 @@ function injectStyles(): void {
 }
 #${PANEL_ID} .cnm-within-input:focus { border-color: #c5d8fb; color: #555; }
 #${PANEL_ID} .cnm-open-btn {
-  padding: 7px 20px; background: #1e64c8; color: #fff; border: none;
+  flex: 1; padding: 7px 20px; background: #1e64c8; color: #fff; border: none;
   border-radius: 4px; font-size: 13px; font-family: inherit; font-weight: 600;
-  cursor: pointer; transition: background 0.15s; white-space: nowrap; flex-shrink: 0;
+  cursor: pointer; transition: background 0.15s; white-space: nowrap;
 }
 #${PANEL_ID} .cnm-open-btn:hover:not(:disabled) { background: #1557b0; }
 #${PANEL_ID} .cnm-open-btn:disabled { opacity: 0.5; cursor: default; }
