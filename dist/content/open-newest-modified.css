@@ -93,6 +93,7 @@
 }
 
 #crm-tools-newest-modified-panel .cnm-sort-btn {
+  flex: 1;
   padding: 4px 10px;
   border: 1px solid #c5d8fb;
   border-radius: 4px;
@@ -102,9 +103,10 @@
   color: #555;
   cursor: pointer;
   white-space: nowrap;
+  text-align: center;
 }
 
-#crm-tools-newest-modified-panel .cnm-sort-btn:hover {
+#crm-tools-newest-modified-panel .cnm-sort-btn:hover:not(:disabled) {
   background: #e8f0fe;
 }
 
@@ -112,6 +114,11 @@
   background: #1e64c8;
   color: #fff;
   border-color: #1e64c8;
+}
+
+#crm-tools-newest-modified-panel .cnm-sort-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 #crm-tools-newest-modified-panel .cnm-action-row {

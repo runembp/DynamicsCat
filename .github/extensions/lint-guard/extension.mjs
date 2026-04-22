@@ -42,7 +42,7 @@ const session = await joinSession({
             const abs = resolve(cwd, filePath);
             if (!existsSync(abs)) return;
 
-            await session.log(`[lint-guard] Linting ${filePath}…`, { ephemeral: true });
+            await session.log(`[lint-guard] Linting…`, { ephemeral: true });
 
             const lintOutput = await runLint(cwd, filePath);
             if (lintOutput) {

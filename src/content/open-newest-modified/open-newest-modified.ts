@@ -3,6 +3,7 @@ import { showToast, makeDraggable } from '../shared';
 const PANEL_ID = 'crm-tools-newest-modified-panel';
 const STYLE_ID = 'crm-tools-newest-modified-style';
 const LIST_ID  = 'crm-tools-newest-modified-list';
+const GUID_RE  = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface EntityMeta {
   LogicalName: string;
@@ -76,19 +77,43 @@ async function main(): Promise<void> {
   sortLabel.className = 'cnm-label';
   sortLabel.textContent = 'Sort by';
 
+  const sortBtns: HTMLButtonElement[] = [];
   const makeSortBtn = (text: string, field: typeof sortField) => {
     const btn = document.createElement('button');
     btn.className = 'cnm-sort-btn' + (field === sortField ? ' cnm-sort-active' : '');
     btn.textContent = text;
+    sortBtns.push(btn);
     btn.addEventListener('click', () => {
+      if (btn.disabled) return;
       sortField = field;
-      sortRow.querySelectorAll('.cnm-sort-btn').forEach(b => b.classList.remove('cnm-sort-active'));
+      sortBtns.forEach(b => b.classList.remove('cnm-sort-active'));
       btn.classList.add('cnm-sort-active');
     });
     return btn;
   };
 
   sortRow.append(sortLabel, makeSortBtn('Newest Modified', 'modifiedon'), makeSortBtn('Newest Created', 'createdon'));
+
+  // GUID row
+  const guidRow = document.createElement('div');
+  guidRow.className = 'cnm-row';
+  const guidLabel = document.createElement('label');
+  guidLabel.className = 'cnm-label';
+  guidLabel.textContent = 'Record ID';
+  const guidInput = document.createElement('input');
+  guidInput.type = 'text';
+  guidInput.className = 'cnm-input';
+  guidInput.placeholder = 'Optional GUID…';
+  guidInput.addEventListener('input', () => {
+    const isGuid = GUID_RE.test(guidInput.value.trim());
+    sortBtns.forEach(b => { b.disabled = isGuid; });
+  });
+  guidInput.addEventListener('keyup',  (e) => e.stopPropagation());
+  guidInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') void openRecord();
+    e.stopPropagation();
+  });
+  guidRow.append(guidLabel, guidInput);
 
   // Action row
   const actionRow = document.createElement('div');
@@ -99,7 +124,7 @@ async function main(): Promise<void> {
   openBtn.disabled = true;
   actionRow.appendChild(openBtn);
 
-  body.append(entityRow, sortRow, actionRow);
+  body.append(entityRow, guidRow, sortRow, actionRow);
   panel.append(header, body);
   document.body.appendChild(panel);
   makeDraggable(panel, header, closeBtn);
@@ -143,6 +168,17 @@ async function main(): Promise<void> {
     );
     if (!meta) {
       showToast(`Entity "${input.value.trim()}" not found.`, 'warn');
+      return;
+    }
+
+    const guidValue = guidInput.value.trim();
+    if (GUID_RE.test(guidValue)) {
+      const cleanId = guidValue.replace(/^\{|\}$/g, '');
+      window.open(
+        `${clientUrl}/main.aspx?pagetype=entityrecord&etn=${meta.LogicalName}&id=%7B${cleanId}%7D`,
+        '_blank',
+      );
+      panel.remove();
       return;
     }
 
@@ -221,12 +257,13 @@ function injectStyles(): void {
 #${PANEL_ID} .cnm-input:focus { border-color: #1e64c8; }
 #${PANEL_ID} .cnm-input:disabled { background: #f5f5f5; color: #aaa; }
 #${PANEL_ID} .cnm-sort-btn {
-  padding: 4px 10px; border: 1px solid #c5d8fb; border-radius: 4px;
+  flex: 1; padding: 4px 10px; border: 1px solid #c5d8fb; border-radius: 4px;
   background: #fff; font-size: 12px; font-family: inherit; color: #555; cursor: pointer;
-  white-space: nowrap;
+  white-space: nowrap; text-align: center;
 }
-#${PANEL_ID} .cnm-sort-btn:hover { background: #e8f0fe; }
+#${PANEL_ID} .cnm-sort-btn:hover:not(:disabled) { background: #e8f0fe; }
 #${PANEL_ID} .cnm-sort-btn.cnm-sort-active { background: #1e64c8; color: #fff; border-color: #1e64c8; }
+#${PANEL_ID} .cnm-sort-btn:disabled { opacity: 0.4; cursor: default; }
 #${PANEL_ID} .cnm-action-row { justify-content: flex-end; padding-top: 4px; }
 #${PANEL_ID} .cnm-open-btn {
   padding: 7px 20px; background: #1e64c8; color: #fff; border: none;
