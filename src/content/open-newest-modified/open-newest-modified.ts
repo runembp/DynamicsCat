@@ -148,7 +148,7 @@ async function main(): Promise<void> {
   withinInput.title = 'Limit search to last N days (leave empty for all time)';
   withinInput.addEventListener('keyup',  (e) => e.stopPropagation());
   withinInput.addEventListener('keydown', (e) => e.stopPropagation());
-  actionRow.append(openBtn, withinInput);
+  actionRow.append(withinInput, openBtn);
 
   // Disable sort when a GUID is entered
   guidInput.addEventListener('input', () => {
@@ -324,7 +324,7 @@ function injectStyles(): void {
 #${PANEL_ID} .cnm-open-btn {
   padding: 7px 20px; background: #1e64c8; color: #fff; border: none;
   border-radius: 4px; font-size: 13px; font-family: inherit; font-weight: 600;
-  cursor: pointer; transition: background 0.15s;
+  cursor: pointer; transition: background 0.15s; white-space: nowrap; flex-shrink: 0;
 }
 #${PANEL_ID} .cnm-open-btn:hover:not(:disabled) { background: #1557b0; }
 #${PANEL_ID} .cnm-open-btn:disabled { opacity: 0.5; cursor: default; }
