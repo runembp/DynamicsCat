@@ -6,15 +6,6 @@ const LIST_ID    = 'crm-tools-newest-modified-list';
 const CACHE_KEY  = 'crm-tools-entity-cache';
 const GUID_RE    = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const WITHIN_OPTIONS: { label: string; days: number | null }[] = [
-  { label: 'Any time',     days: null },
-  { label: 'Today',        days: 1    },
-  { label: 'Last 7 days',  days: 7    },
-  { label: 'Last 14 days', days: 14   },
-  { label: 'Last 30 days', days: 30   },
-  { label: 'Last 90 days', days: 90   },
-];
-
 interface EntityMeta {
   LogicalName: string;
   DisplayName: { UserLocalizedLabel: { Label: string } | null } | null;
@@ -142,40 +133,30 @@ async function main(): Promise<void> {
   };
   sortRow.append(sortLabel, makeSortBtn('Newest Modified', 'modifiedon'), makeSortBtn('Newest Created', 'createdon'));
 
-  // Within row
-  const withinRow = document.createElement('div');
-  withinRow.className = 'cnm-row';
-  const withinLabel = document.createElement('span');
-  withinLabel.className = 'cnm-label';
-  withinLabel.textContent = 'Within';
-  const withinSelect = document.createElement('select');
-  withinSelect.className = 'cnm-select';
-  for (const opt of WITHIN_OPTIONS) {
-    const el = document.createElement('option');
-    el.value = String(opt.days ?? '');
-    el.textContent = opt.label;
-    if (opt.days === 14) el.selected = true;
-    withinSelect.appendChild(el);
-  }
-  withinRow.append(withinLabel, withinSelect);
-
-  // Action row
+  // Action row — open button left, subtle days-limit input right
   const actionRow = document.createElement('div');
   actionRow.className = 'cnm-row cnm-action-row';
   const openBtn = document.createElement('button');
   openBtn.className = 'cnm-open-btn';
   openBtn.textContent = 'Open Record';
   openBtn.disabled = true;
-  actionRow.appendChild(openBtn);
+  const withinInput = document.createElement('input');
+  withinInput.type = 'number';
+  withinInput.className = 'cnm-within-input';
+  withinInput.min = '1';
+  withinInput.value = '14';
+  withinInput.title = 'Limit search to last N days (leave empty for all time)';
+  withinInput.addEventListener('keyup',  (e) => e.stopPropagation());
+  withinInput.addEventListener('keydown', (e) => e.stopPropagation());
+  actionRow.append(openBtn, withinInput);
 
-  // Disable sort + within when a GUID is entered
+  // Disable sort when a GUID is entered
   guidInput.addEventListener('input', () => {
     const isGuid = GUID_RE.test(guidInput.value.trim());
     sortBtns.forEach(b => { b.disabled = isGuid; });
-    withinSelect.disabled = isGuid;
   });
 
-  body.append(entityRow, guidRow, sortRow, withinRow, actionRow);
+  body.append(entityRow, guidRow, sortRow, actionRow);
   panel.append(header, body);
   document.body.appendChild(panel);
   makeDraggable(panel, header, closeBtn);
@@ -238,7 +219,7 @@ async function main(): Promise<void> {
       return;
     }
 
-    const withinDays = withinSelect.value ? parseInt(withinSelect.value, 10) : null;
+    const withinDays = withinInput.value ? parseInt(withinInput.value, 10) : null;
     let filterClause = '';
     if (withinDays !== null) {
       const since = new Date(Date.now() - withinDays * 86_400_000).toISOString();
@@ -333,13 +314,13 @@ function injectStyles(): void {
 #${PANEL_ID} .cnm-sort-btn:hover:not(:disabled) { background: #e8f0fe; }
 #${PANEL_ID} .cnm-sort-btn.cnm-sort-active { background: #1e64c8; color: #fff; border-color: #1e64c8; }
 #${PANEL_ID} .cnm-sort-btn:disabled { opacity: 0.4; cursor: default; }
-#${PANEL_ID} .cnm-select {
-  flex: 1; min-width: 0; padding: 5px 8px;
-  border: 1px solid #c5d8fb; border-radius: 4px;
-  font-size: 13px; font-family: inherit; color: #222; background: #fff; cursor: pointer;
+#${PANEL_ID} .cnm-action-row { justify-content: space-between; align-items: center; padding-top: 4px; }
+#${PANEL_ID} .cnm-within-input {
+  width: 44px; padding: 3px 5px; border: 1px solid #e0e0e0; border-radius: 4px;
+  font-size: 11px; font-family: inherit; color: #aaa; text-align: center;
+  background: #fafafa; outline: none;
 }
-#${PANEL_ID} .cnm-select:disabled { opacity: 0.4; cursor: default; }
-#${PANEL_ID} .cnm-action-row { justify-content: flex-end; padding-top: 4px; }
+#${PANEL_ID} .cnm-within-input:focus { border-color: #c5d8fb; color: #555; }
 #${PANEL_ID} .cnm-open-btn {
   padding: 7px 20px; background: #1e64c8; color: #fff; border: none;
   border-radius: 4px; font-size: 13px; font-family: inherit; font-weight: 600;
