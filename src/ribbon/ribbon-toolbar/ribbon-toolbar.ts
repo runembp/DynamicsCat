@@ -181,7 +181,7 @@ function buildToolbar(): void {
     sendAction('openOnApi');
   });
 
-  const openNewestModifiedBtn = makeDropdownBtn('🕐', 'Open Newest Modified');
+  const openNewestModifiedBtn = makeDropdownBtn('🕐', 'Jump to Latest');
   openNewestModifiedBtn.addEventListener('click', () => {
     dropdown.style.display = 'none';
     sendAction('openNewestModified');

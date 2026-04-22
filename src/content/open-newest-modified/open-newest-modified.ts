@@ -39,7 +39,7 @@ async function main(): Promise<void> {
   header.className = 'cnm-header';
   const titleEl = document.createElement('span');
   titleEl.className = 'cnm-title';
-  titleEl.textContent = '🕐 Open Newest Modified';
+  titleEl.textContent = '🕐 Jump to Latest';
   const closeBtn = document.createElement('button');
   closeBtn.className = 'cnm-close';
   closeBtn.textContent = '✕';
@@ -88,7 +88,7 @@ async function main(): Promise<void> {
     return btn;
   };
 
-  sortRow.append(sortLabel, makeSortBtn('Last Modified', 'modifiedon'), makeSortBtn('Last Created', 'createdon'));
+  sortRow.append(sortLabel, makeSortBtn('Newest Modified', 'modifiedon'), makeSortBtn('Newest Created', 'createdon'));
 
   // Action row
   const actionRow = document.createElement('div');
