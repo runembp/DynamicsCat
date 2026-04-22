@@ -1,15 +1,30 @@
 import { showToast, makeDraggable } from '../shared';
 
-const PANEL_ID = 'crm-tools-newest-modified-panel';
-const STYLE_ID = 'crm-tools-newest-modified-style';
-const LIST_ID  = 'crm-tools-newest-modified-list';
-const GUID_RE  = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const PANEL_ID   = 'crm-tools-newest-modified-panel';
+const STYLE_ID   = 'crm-tools-newest-modified-style';
+const LIST_ID    = 'crm-tools-newest-modified-list';
+const CACHE_KEY  = 'crm-tools-entity-cache';
+const GUID_RE    = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const WITHIN_OPTIONS: { label: string; days: number | null }[] = [
+  { label: 'Any time',     days: null },
+  { label: 'Today',        days: 1    },
+  { label: 'Last 7 days',  days: 7    },
+  { label: 'Last 14 days', days: 14   },
+  { label: 'Last 30 days', days: 30   },
+  { label: 'Last 90 days', days: 90   },
+];
 
 interface EntityMeta {
   LogicalName: string;
   DisplayName: { UserLocalizedLabel: { Label: string } | null } | null;
   EntitySetName: string;
   PrimaryIdAttribute: string;
+}
+
+interface EntityCache {
+  clientUrl: string;
+  entities: EntityMeta[];
 }
 
 function apiVersionFromCrmVersion(crmVersion: string): string {
@@ -19,6 +34,23 @@ function apiVersionFromCrmVersion(crmVersion: string): string {
 
 function getDisplayName(meta: EntityMeta): string {
   return meta.DisplayName?.UserLocalizedLabel?.Label ?? meta.LogicalName;
+}
+
+function loadCachedEntities(clientUrl: string): EntityMeta[] | null {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const cache = JSON.parse(raw) as EntityCache;
+    return cache.clientUrl === clientUrl ? cache.entities : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedEntities(clientUrl: string, entities: EntityMeta[]): void {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ clientUrl, entities } satisfies EntityCache));
+  } catch { /* storage full — ignore */ }
 }
 
 async function main(): Promise<void> {
@@ -69,6 +101,23 @@ async function main(): Promise<void> {
   input.addEventListener('keyup', (e) => e.stopPropagation());
   entityRow.append(entityLabel, input, datalist);
 
+  // GUID row
+  const guidRow = document.createElement('div');
+  guidRow.className = 'cnm-row';
+  const guidLabel = document.createElement('label');
+  guidLabel.className = 'cnm-label';
+  guidLabel.textContent = 'Record ID';
+  const guidInput = document.createElement('input');
+  guidInput.type = 'text';
+  guidInput.className = 'cnm-input';
+  guidInput.placeholder = 'Optional GUID…';
+  guidInput.addEventListener('keyup',  (e) => e.stopPropagation());
+  guidInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') void openRecord();
+    e.stopPropagation();
+  });
+  guidRow.append(guidLabel, guidInput);
+
   // Sort-by row
   let sortField: 'modifiedon' | 'createdon' = 'modifiedon';
   const sortRow = document.createElement('div');
@@ -91,29 +140,24 @@ async function main(): Promise<void> {
     });
     return btn;
   };
-
   sortRow.append(sortLabel, makeSortBtn('Newest Modified', 'modifiedon'), makeSortBtn('Newest Created', 'createdon'));
 
-  // GUID row
-  const guidRow = document.createElement('div');
-  guidRow.className = 'cnm-row';
-  const guidLabel = document.createElement('label');
-  guidLabel.className = 'cnm-label';
-  guidLabel.textContent = 'Record ID';
-  const guidInput = document.createElement('input');
-  guidInput.type = 'text';
-  guidInput.className = 'cnm-input';
-  guidInput.placeholder = 'Optional GUID…';
-  guidInput.addEventListener('input', () => {
-    const isGuid = GUID_RE.test(guidInput.value.trim());
-    sortBtns.forEach(b => { b.disabled = isGuid; });
-  });
-  guidInput.addEventListener('keyup',  (e) => e.stopPropagation());
-  guidInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') void openRecord();
-    e.stopPropagation();
-  });
-  guidRow.append(guidLabel, guidInput);
+  // Within row
+  const withinRow = document.createElement('div');
+  withinRow.className = 'cnm-row';
+  const withinLabel = document.createElement('span');
+  withinLabel.className = 'cnm-label';
+  withinLabel.textContent = 'Within';
+  const withinSelect = document.createElement('select');
+  withinSelect.className = 'cnm-select';
+  for (const opt of WITHIN_OPTIONS) {
+    const el = document.createElement('option');
+    el.value = String(opt.days ?? '');
+    el.textContent = opt.label;
+    if (opt.days === 14) el.selected = true;
+    withinSelect.appendChild(el);
+  }
+  withinRow.append(withinLabel, withinSelect);
 
   // Action row
   const actionRow = document.createElement('div');
@@ -124,38 +168,50 @@ async function main(): Promise<void> {
   openBtn.disabled = true;
   actionRow.appendChild(openBtn);
 
-  body.append(entityRow, guidRow, sortRow, actionRow);
+  // Disable sort + within when a GUID is entered
+  guidInput.addEventListener('input', () => {
+    const isGuid = GUID_RE.test(guidInput.value.trim());
+    sortBtns.forEach(b => { b.disabled = isGuid; });
+    withinSelect.disabled = isGuid;
+  });
+
+  body.append(entityRow, guidRow, sortRow, withinRow, actionRow);
   panel.append(header, body);
   document.body.appendChild(panel);
   makeDraggable(panel, header, closeBtn);
 
-  // ── Fetch entity list ────────────────────────────────────────────────────────
+  // ── Fetch entity list (sessionStorage cached) ────────────────────────────────
   let allEntities: EntityMeta[] = [];
-  try {
-    const res  = await fetch(
-      `${clientUrl}/api/data/${apiVersion}/EntityDefinitions` +
-      `?$select=LogicalName,DisplayName,EntitySetName,PrimaryIdAttribute`,
-    );
-    const json = await res.json() as { value: EntityMeta[] };
-    allEntities = json.value
-      .filter(e => e.EntitySetName)
-      .sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)));
-
-    for (const e of allEntities) {
-      const opt = document.createElement('option');
-      opt.value = getDisplayName(e);
-      opt.label = e.LogicalName;
-      datalist.appendChild(opt);
+  const cached = loadCachedEntities(clientUrl);
+  if (cached) {
+    allEntities = cached;
+  } else {
+    try {
+      const res  = await fetch(
+        `${clientUrl}/api/data/${apiVersion}/EntityDefinitions` +
+        `?$select=LogicalName,DisplayName,EntitySetName,PrimaryIdAttribute`,
+      );
+      const json = await res.json() as { value: EntityMeta[] };
+      allEntities = json.value
+        .filter(e => e.EntitySetName)
+        .sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)));
+      saveCachedEntities(clientUrl, allEntities);
+    } catch {
+      input.placeholder = 'Failed to load entities';
+      showToast('Could not load entity list.', 'warn');
+      return;
     }
-
-    input.placeholder = 'Type entity name…';
-    input.disabled    = false;
-    openBtn.disabled  = false;
-  } catch {
-    input.placeholder = 'Failed to load entities';
-    showToast('Could not load entity list.', 'warn');
-    return;
   }
+
+  for (const e of allEntities) {
+    const opt = document.createElement('option');
+    opt.value = getDisplayName(e);
+    opt.label = e.LogicalName;
+    datalist.appendChild(opt);
+  }
+  input.placeholder = 'Type entity name…';
+  input.disabled    = false;
+  openBtn.disabled  = false;
 
   // ── Open handler ─────────────────────────────────────────────────────────────
   const openRecord = async () => {
@@ -182,11 +238,18 @@ async function main(): Promise<void> {
       return;
     }
 
+    const withinDays = withinSelect.value ? parseInt(withinSelect.value, 10) : null;
+    let filterClause = '';
+    if (withinDays !== null) {
+      const since = new Date(Date.now() - withinDays * 86_400_000).toISOString();
+      filterClause = `&$filter=${sortField}%20ge%20${since}`;
+    }
+
     openBtn.disabled    = true;
     openBtn.textContent = 'Opening…';
     try {
       const recordUrl = `${clientUrl}/api/data/${apiVersion}/${meta.EntitySetName}` +
-        `?$select=${meta.PrimaryIdAttribute}&$orderby=${sortField}%20desc&$top=1`;
+        `?$select=${meta.PrimaryIdAttribute}&$orderby=${sortField}%20desc&$top=1${filterClause}`;
       console.log('[DynamicsCat] OData query:', recordUrl);
       const res  = await fetch(recordUrl, {
         headers: {
@@ -270,6 +333,12 @@ function injectStyles(): void {
 #${PANEL_ID} .cnm-sort-btn:hover:not(:disabled) { background: #e8f0fe; }
 #${PANEL_ID} .cnm-sort-btn.cnm-sort-active { background: #1e64c8; color: #fff; border-color: #1e64c8; }
 #${PANEL_ID} .cnm-sort-btn:disabled { opacity: 0.4; cursor: default; }
+#${PANEL_ID} .cnm-select {
+  flex: 1; min-width: 0; padding: 5px 8px;
+  border: 1px solid #c5d8fb; border-radius: 4px;
+  font-size: 13px; font-family: inherit; color: #222; background: #fff; cursor: pointer;
+}
+#${PANEL_ID} .cnm-select:disabled { opacity: 0.4; cursor: default; }
 #${PANEL_ID} .cnm-action-row { justify-content: flex-end; padding-top: 4px; }
 #${PANEL_ID} .cnm-open-btn {
   padding: 7px 20px; background: #1e64c8; color: #fff; border: none;
