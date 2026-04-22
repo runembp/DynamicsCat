@@ -2,8 +2,9 @@
 
 #crm-tools-newest-modified-panel {
   position: fixed;
-  top: 80px;
-  right: 24px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 340px;
   background: #fff;
   border: 2px solid #1e64c8;

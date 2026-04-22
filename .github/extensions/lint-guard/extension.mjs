@@ -51,7 +51,7 @@ const session = await joinSession({
                     additionalContext: `ESLint found issues in ${filePath} that must be fixed:\n\n${lintOutput}`,
                 };
             } else {
-                await session.log(`[lint-guard] ✓ ${filePath} lint clean`, { ephemeral: true });
+                await session.log(`[lint-guard] ✓`, { ephemeral: true });
             }
         },
     },

@@ -149,10 +149,10 @@ async function main(): Promise<void> {
     openBtn.disabled    = true;
     openBtn.textContent = 'Opening…';
     try {
-      const res  = await fetch(
-        `${clientUrl}/api/data/${apiVersion}/${meta.EntitySetName}` +
-        `?$select=${meta.PrimaryIdAttribute}&$orderby=${sortField} desc&$top=1`,
-      );
+      const recordUrl = `${clientUrl}/api/data/${apiVersion}/${meta.EntitySetName}` +
+        `?$select=${meta.PrimaryIdAttribute}&$orderby=${sortField} desc&$top=1`;
+      console.log('[DynamicsCat] OData query:', recordUrl);
+      const res  = await fetch(recordUrl);
       const json = await res.json() as { value: Record<string, string>[] };
 
       if (!json.value?.length) {
@@ -190,7 +190,7 @@ function injectStyles(): void {
   style.id = STYLE_ID;
   style.textContent = `
 #${PANEL_ID} {
-  position: fixed; top: 80px; right: 24px; width: 340px;
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 340px;
   background: #fff; border: 2px solid #1e64c8; border-radius: 8px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.2);
   z-index: 2147483647; overflow: hidden;

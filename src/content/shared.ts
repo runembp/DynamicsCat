@@ -27,9 +27,10 @@ export function buildLabelMap(): Record<string, string> {
 export function makeDraggable(panel: HTMLElement, handle: HTMLElement, closeBtn: HTMLElement): void {
   requestAnimationFrame(() => {
     const rect = panel.getBoundingClientRect();
-    panel.style.left  = rect.left + 'px';
-    panel.style.top   = rect.top  + 'px';
-    panel.style.right = '';
+    panel.style.left      = rect.left + 'px';
+    panel.style.top       = rect.top  + 'px';
+    panel.style.right     = '';
+    panel.style.transform = '';
   });
 
   let dragging = false;
