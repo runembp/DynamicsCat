@@ -200,6 +200,11 @@ function buildToolbar(): void {
   };
   document.addEventListener('click', outsideClickHandler);
 
+  // --- Blur handler: close dropdown when focus leaves top window (e.g. click in CRM iframe) ---
+  window.addEventListener('blur', () => {
+    dropdown.style.display = 'none';
+  });
+
   // --- Inject into #navBar (where crm-power-pane-button lives) ---
   // If navBar isn't in the DOM yet, clean up and let the MutationObserver retry.
   // Never fall back to body — avoids polluting CRM form iframes with a stray button.
