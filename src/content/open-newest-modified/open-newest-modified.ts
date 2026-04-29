@@ -1,4 +1,5 @@
-import { showToast, makeDraggable } from '../shared';
+import { showToast } from '../shared';
+import { createPanelShell, isolateKeyboard } from '../panel';
 
 const PANEL_ID   = 'crm-tools-newest-modified-panel';
 const STYLE_ID   = 'crm-tools-newest-modified-style';
@@ -17,6 +18,43 @@ interface EntityCache {
   clientUrl: string;
   entities: EntityMeta[];
 }
+
+const EXTRA_CSS = `
+#${PANEL_ID} .cnm-row { display: flex; align-items: center; gap: 8px; }
+#${PANEL_ID} .cnm-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px; color: #80868b; min-width: 54px; flex-shrink: 0;
+}
+#${PANEL_ID} .cnm-input {
+  flex: 1; min-width: 0; padding: 6px 10px;
+  border: 1px solid #c5d8fb; border-radius: 4px;
+  font-size: 13px; font-family: inherit; color: #222; outline: none;
+}
+#${PANEL_ID} .cnm-input:focus { border-color: #1e64c8; }
+#${PANEL_ID} .cnm-input:disabled { background: #f5f5f5; color: #aaa; }
+#${PANEL_ID} .cnm-sort-btn {
+  flex: 1; padding: 4px 10px; border: 1px solid #c5d8fb; border-radius: 4px;
+  background: #fff; font-size: 12px; font-family: inherit; color: #555; cursor: pointer;
+  white-space: nowrap; text-align: center;
+}
+#${PANEL_ID} .cnm-sort-btn:hover:not(:disabled) { background: #e8f0fe; }
+#${PANEL_ID} .cnm-sort-btn.cnm-sort-active { background: #1e64c8; color: #fff; border-color: #1e64c8; }
+#${PANEL_ID} .cnm-sort-btn:disabled { opacity: 0.4; cursor: default; }
+#${PANEL_ID} .cnm-action-row { justify-content: space-between; align-items: center; padding-top: 4px; }
+#${PANEL_ID} .cnm-within-input {
+  width: 44px; padding: 3px 5px; border: 1px solid #e0e0e0; border-radius: 4px;
+  font-size: 11px; font-family: inherit; color: #aaa; text-align: center;
+  background: #fafafa; outline: none;
+}
+#${PANEL_ID} .cnm-within-input:focus { border-color: #c5d8fb; color: #555; }
+#${PANEL_ID} .cnm-open-btn {
+  flex: 1; padding: 7px 20px; background: #1e64c8; color: #fff; border: none;
+  border-radius: 4px; font-size: 13px; font-family: inherit; font-weight: 600;
+  cursor: pointer; transition: background 0.15s; white-space: nowrap;
+}
+#${PANEL_ID} .cnm-open-btn:hover:not(:disabled) { background: #1557b0; }
+#${PANEL_ID} .cnm-open-btn:disabled { opacity: 0.5; cursor: default; }
+`;
 
 function apiVersionFromCrmVersion(crmVersion: string): string {
   const major = parseInt(crmVersion.split('.')[0] ?? '8', 10);
@@ -45,34 +83,23 @@ function saveCachedEntities(clientUrl: string, entities: EntityMeta[]): void {
 }
 
 async function main(): Promise<void> {
-  const existing = document.getElementById(PANEL_ID);
-  if (existing) { existing.remove(); return; }
-
   if (typeof Xrm === 'undefined' || !Xrm.Page?.context) return;
+
+  const shell = createPanelShell({
+    panelId: PANEL_ID,
+    styleId: STYLE_ID,
+    title: '🕐 Jump to Latest',
+    variant: 'dialog',
+    extraCss: EXTRA_CSS,
+  });
+  if (!shell) return; // toggled off
+
+  const { panel, body } = shell;
 
   const clientUrl  = Xrm.Page.context.getClientUrl();
   const apiVersion = apiVersionFromCrmVersion(Xrm.Page.context.getVersion());
 
-  injectStyles();
-
-  // ── Panel skeleton ───────────────────────────────────────────────────────────
-  const panel = document.createElement('div');
-  panel.id = PANEL_ID;
-
-  const header = document.createElement('div');
-  header.className = 'cnm-header';
-  const titleEl = document.createElement('span');
-  titleEl.className = 'cnm-title';
-  titleEl.textContent = '🕐 Jump to Latest';
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'cnm-close';
-  closeBtn.textContent = '✕';
-  closeBtn.title = 'Close';
-  closeBtn.addEventListener('click', () => panel.remove());
-  header.append(titleEl, closeBtn);
-
-  const body = document.createElement('div');
-  body.className = 'cnm-body';
+  // ── Form content ────────────────────────────────────────────────────────────
 
   // Entity input row
   const entityRow = document.createElement('div');
@@ -89,7 +116,7 @@ async function main(): Promise<void> {
   input.setAttribute('autocomplete', 'off');
   const datalist = document.createElement('datalist');
   datalist.id = LIST_ID;
-  input.addEventListener('keyup', (e) => e.stopPropagation());
+  isolateKeyboard(input);
   entityRow.append(entityLabel, input, datalist);
 
   // GUID row
@@ -102,10 +129,9 @@ async function main(): Promise<void> {
   guidInput.type = 'text';
   guidInput.className = 'cnm-input';
   guidInput.placeholder = 'Optional GUID…';
-  guidInput.addEventListener('keyup',  (e) => e.stopPropagation());
+  isolateKeyboard(guidInput);
   guidInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') void openRecord();
-    e.stopPropagation();
   });
   guidRow.append(guidLabel, guidInput);
 
@@ -146,8 +172,7 @@ async function main(): Promise<void> {
   withinInput.min = '1';
   withinInput.value = '14';
   withinInput.title = 'Limit search to last N days (leave empty for all time)';
-  withinInput.addEventListener('keyup',  (e) => e.stopPropagation());
-  withinInput.addEventListener('keydown', (e) => e.stopPropagation());
+  isolateKeyboard(withinInput);
   actionRow.append(withinInput, openBtn);
 
   // Disable sort when a GUID is entered
@@ -157,9 +182,6 @@ async function main(): Promise<void> {
   });
 
   body.append(entityRow, guidRow, sortRow, actionRow);
-  panel.append(header, body);
-  document.body.appendChild(panel);
-  makeDraggable(panel, header, closeBtn);
 
   // ── Fetch entity list (sessionStorage cached) ────────────────────────────────
   let allEntities: EntityMeta[] = [];
@@ -266,70 +288,7 @@ async function main(): Promise<void> {
   openBtn.addEventListener('click', () => { void openRecord(); });
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') void openRecord();
-    e.stopPropagation();
   });
-}
-
-function injectStyles(): void {
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.textContent = `
-#${PANEL_ID} {
-  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 380px;
-  background: #fff; border: 2px solid #1e64c8; border-radius: 8px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-  z-index: 2147483647; overflow: hidden;
-  font-family: Segoe UI, Arial, sans-serif; font-size: 13px; color: #222;
-}
-#${PANEL_ID} .cnm-header {
-  display: flex; align-items: center; justify-content: space-between;
-  background: #1e64c8; color: #fff; padding: 10px 14px;
-  cursor: move; user-select: none;
-}
-#${PANEL_ID} .cnm-title { font-size: 14px; font-weight: 600; }
-#${PANEL_ID} .cnm-close {
-  background: none; border: none; color: #fff;
-  font-size: 16px; line-height: 1; cursor: pointer; padding: 0 2px; opacity: 0.85;
-}
-#${PANEL_ID} .cnm-close:hover { opacity: 1; }
-#${PANEL_ID} .cnm-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-#${PANEL_ID} .cnm-row { display: flex; align-items: center; gap: 8px; }
-#${PANEL_ID} .cnm-label {
-  font-size: 11px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.5px; color: #80868b; min-width: 54px; flex-shrink: 0;
-}
-#${PANEL_ID} .cnm-input {
-  flex: 1; min-width: 0; padding: 6px 10px;
-  border: 1px solid #c5d8fb; border-radius: 4px;
-  font-size: 13px; font-family: inherit; color: #222; outline: none;
-}
-#${PANEL_ID} .cnm-input:focus { border-color: #1e64c8; }
-#${PANEL_ID} .cnm-input:disabled { background: #f5f5f5; color: #aaa; }
-#${PANEL_ID} .cnm-sort-btn {
-  flex: 1; padding: 4px 10px; border: 1px solid #c5d8fb; border-radius: 4px;
-  background: #fff; font-size: 12px; font-family: inherit; color: #555; cursor: pointer;
-  white-space: nowrap; text-align: center;
-}
-#${PANEL_ID} .cnm-sort-btn:hover:not(:disabled) { background: #e8f0fe; }
-#${PANEL_ID} .cnm-sort-btn.cnm-sort-active { background: #1e64c8; color: #fff; border-color: #1e64c8; }
-#${PANEL_ID} .cnm-sort-btn:disabled { opacity: 0.4; cursor: default; }
-#${PANEL_ID} .cnm-action-row { justify-content: space-between; align-items: center; padding-top: 4px; }
-#${PANEL_ID} .cnm-within-input {
-  width: 44px; padding: 3px 5px; border: 1px solid #e0e0e0; border-radius: 4px;
-  font-size: 11px; font-family: inherit; color: #aaa; text-align: center;
-  background: #fafafa; outline: none;
-}
-#${PANEL_ID} .cnm-within-input:focus { border-color: #c5d8fb; color: #555; }
-#${PANEL_ID} .cnm-open-btn {
-  flex: 1; padding: 7px 20px; background: #1e64c8; color: #fff; border: none;
-  border-radius: 4px; font-size: 13px; font-family: inherit; font-weight: 600;
-  cursor: pointer; transition: background 0.15s; white-space: nowrap;
-}
-#${PANEL_ID} .cnm-open-btn:hover:not(:disabled) { background: #1557b0; }
-#${PANEL_ID} .cnm-open-btn:disabled { opacity: 0.5; cursor: default; }
-  `;
-  document.head.appendChild(style);
 }
 
 void main();

@@ -8,8 +8,11 @@ function apiVersionFromCrmVersion(crmVersion: string): string {
 }
 
 async function openOnApi(): Promise<void> {
-  // Guard: Xrm may be absent on the top frame or non-form iframes
-  if (typeof Xrm === 'undefined' || !Xrm.Page || !Xrm.Page.data) return;
+  // Guard: show toast on non-CRM pages instead of silently doing nothing
+  if (typeof Xrm === 'undefined' || !Xrm.Page || !Xrm.Page.data) {
+    showToast('No CRM record open — navigate to a record first.', 'warn');
+    return;
+  }
 
   const id = Xrm.Page.data.entity.getId();
   if (!id) {

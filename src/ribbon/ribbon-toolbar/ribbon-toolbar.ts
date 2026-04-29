@@ -3,6 +3,9 @@
 // mirroring the crm-power-pane-button structure.
 // Does NOT touch Xrm — delegates actions to background via sendMessage.
 
+import { ACTIONS } from '../../actions';
+import { STATE_KEYS, getSharedDataset } from '../../content/state';
+
 const TOOLBAR_ID = 'crm-tools-ribbon-toolbar';
 const STYLE_ID   = 'crm-tools-ribbon-style';
 const DROPDOWN_ID = 'crm-tools-ribbon-dropdown';
@@ -139,56 +142,28 @@ function buildToolbar(): void {
     return btn;
   }
 
-  // --- Left column ---
+  // --- Build buttons from action registry ---
   const colLeft = document.createElement('div');
-
-  const allFieldsBtn = makeDropdownBtn('📋', 'All Fields');
-  allFieldsBtn.addEventListener('click', () => {
-    dropdown.style.display = 'none';
-    sendAction('injectAllFields');
-  });
-
-  const optionSetsBtn = makeDropdownBtn('🔘', 'Option Sets');
-  optionSetsBtn.addEventListener('click', () => {
-    dropdown.style.display = 'none';
-    sendAction('injectOptionSets');
-  });
-
-  const showHiddenBtn = makeDropdownBtn('👁', 'Hidden Fields');
-  showHiddenBtn.addEventListener('click', () => {
-    dropdown.style.display = 'none';
-    sendAction('injectShowHiddenFields');
-  });
-
-  const dirtyFieldsBtn = makeDropdownBtn('✏️', 'Dirty Fields');
-  dirtyFieldsBtn.addEventListener('click', () => {
-    dropdown.style.display = 'none';
-    sendAction('injectDirtyFields');
-  });
-
-  colLeft.appendChild(allFieldsBtn);
-  colLeft.appendChild(optionSetsBtn);
-  colLeft.appendChild(showHiddenBtn);
-  colLeft.appendChild(dirtyFieldsBtn);
-
-  // --- Right column ---
   const colRight = document.createElement('div');
   colRight.style.cssText = 'border-left: 1px solid #e8eaed;';
 
-  const openOnApiBtn = makeDropdownBtn('🔗', 'Open on API');
-  openOnApiBtn.addEventListener('click', () => {
-    dropdown.style.display = 'none';
-    sendAction('openOnApi');
-  });
+  // Actions are split into two columns: first 4 left, rest right
+  const LEFT_ACTIONS = new Set(['injectAllFields', 'injectOptionSets', 'injectShowHiddenFields', 'injectDirtyFields']);
 
-  const openNewestModifiedBtn = makeDropdownBtn('🕐', 'Jump to Latest');
-  openNewestModifiedBtn.addEventListener('click', () => {
-    dropdown.style.display = 'none';
-    sendAction('openNewestModified');
-  });
+  // Track buttons that show active state
+  const activeButtons: Record<string, HTMLButtonElement> = {};
 
-  colRight.appendChild(openOnApiBtn);
-  colRight.appendChild(openNewestModifiedBtn);
+  for (const def of ACTIONS) {
+    const btn = makeDropdownBtn(def.icon, def.label);
+    btn.addEventListener('click', () => {
+      dropdown.style.display = 'none';
+      sendAction(def.action);
+    });
+    if (def.action === 'injectShowHiddenFields' || def.action === 'injectDirtyFields') {
+      activeButtons[def.action] = btn;
+    }
+    (LEFT_ACTIONS.has(def.action) ? colLeft : colRight).appendChild(btn);
+  }
 
   dropdown.appendChild(colLeft);
   dropdown.appendChild(colRight);
@@ -207,9 +182,11 @@ function buildToolbar(): void {
       dropdown.style.top  = rect.bottom + 'px';
       dropdown.style.left = rect.left + 'px';
       // Reflect toggle state written by MAIN-world content scripts via dataset
-      const ds = document.documentElement.dataset;
-      setButtonActive(showHiddenBtn, ds['dynamicsCatHiddenActive'] === '1');
-      setButtonActive(dirtyFieldsBtn, ds['dynamicsCatDirtyActive'] === '1');
+      const ds = getSharedDataset();
+      const hiddenBtn = activeButtons['injectShowHiddenFields'];
+      const dirtyBtn = activeButtons['injectDirtyFields'];
+      if (hiddenBtn) setButtonActive(hiddenBtn, ds[STATE_KEYS.hiddenActive] === '1');
+      if (dirtyBtn) setButtonActive(dirtyBtn, ds[STATE_KEYS.dirtyActive] === '1');
       dropdown.style.display = 'grid';
     }
   });

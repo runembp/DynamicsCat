@@ -1,68 +1,69 @@
-"use strict";(()=>{function I(e,o){let t;return(...a)=>{clearTimeout(t),t=setTimeout(()=>e(...a),o)}}function X(){let e={};return Xrm.Page.ui.controls.forEach(o=>{let t=o.getName();if(t)try{e[t]=o.getLabel()||t}catch{e[t]=t}}),e}function z(e,o,t){requestAnimationFrame(()=>{let n=e.getBoundingClientRect();e.style.left=n.left+"px",e.style.top=n.top+"px",e.style.right="",e.style.transform=""});let a=!1,i=0,c=0,d=n=>{if(!a)return;let p=Math.max(0,Math.min(n.clientX-i,window.innerWidth-e.offsetWidth)),r=Math.max(0,Math.min(n.clientY-c,window.innerHeight-e.offsetHeight));e.style.left=p+"px",e.style.top=r+"px"},l=()=>{a=!1,o.style.cursor="move"};o.addEventListener("mousedown",n=>{t.contains(n.target)||(a=!0,i=n.clientX-e.offsetLeft,c=n.clientY-e.offsetTop,o.style.cursor="grabbing",n.preventDefault())}),document.addEventListener("mousemove",d),document.addEventListener("mouseup",l),new MutationObserver((n,p)=>{document.contains(e)||(document.removeEventListener("mousemove",d),document.removeEventListener("mouseup",l),p.disconnect())}).observe(document.body,{childList:!0,subtree:!0})}function A(e){let o=document.createElement("textarea");o.value=e,o.style.cssText="position:fixed;opacity:0;pointer-events:none",document.body.appendChild(o),o.select(),document.execCommand("copy"),document.body.removeChild(o)}function P(e){navigator.clipboard?.writeText?navigator.clipboard.writeText(e).catch(()=>A(e)):A(e)}var R="crm-tools-optionsets-panel",O="crm-tools-optionsets-style";function H(){let e=document.getElementById(R);if(e){e.remove();return}if(typeof Xrm>"u"||!Xrm.Page||!Xrm.Page.ui||!Xrm.Page.data)return;let o=X(),a=[...Xrm.Page.data.entity.attributes.get().filter(i=>i.getAttributeType()==="optionset"||i.getAttributeType()==="multiselectoptionset")].sort((i,c)=>{let d=(o[i.getName()]||i.getName()).toLowerCase(),l=(o[c.getName()]||c.getName()).toLowerCase();return d.localeCompare(l)});D(),B(a,o)}function D(){if(document.getElementById(O))return;let e=document.createElement("style");e.id=O,e.textContent=`
-#crm-tools-optionsets-panel {
-  position: fixed; top: 0; right: 0; width: auto; min-width: 550px; max-width: 90vw; max-height: 90vh;
-  background: #fff; border: 2px solid #1e64c8;
-  box-shadow: -4px 0 16px rgba(0,0,0,0.18);
-  z-index: 2147483647; display: flex; flex-direction: column;
-  font-family: Segoe UI, Arial, sans-serif; font-size: 13px; color: #222;
-}
-#crm-tools-optionsets-panel .cop-header {
-  display: flex; align-items: center; justify-content: space-between;
+"use strict";(()=>{function I(e,n){let t;return(...a)=>{clearTimeout(t),t=setTimeout(()=>e(...a),n)}}function A(){let e={};return Xrm.Page.ui.controls.forEach(n=>{let t=n.getName();if(t)try{e[t]=n.getLabel()||t}catch{e[t]=t}}),e}function P(e,n,t){requestAnimationFrame(()=>{let o=e.getBoundingClientRect();e.style.left=o.left+"px",e.style.top=o.top+"px",e.style.right="",e.style.transform=""});let a=!1,l=0,p=0,s=o=>{if(!a)return;let m=Math.max(0,Math.min(o.clientX-l,window.innerWidth-e.offsetWidth)),g=Math.max(0,Math.min(o.clientY-p,window.innerHeight-e.offsetHeight));e.style.left=m+"px",e.style.top=g+"px"},d=()=>{a=!1,n.style.cursor="move"};n.addEventListener("mousedown",o=>{t.contains(o.target)||(a=!0,l=o.clientX-e.offsetLeft,p=o.clientY-e.offsetTop,n.style.cursor="grabbing",o.preventDefault())}),document.addEventListener("mousemove",s),document.addEventListener("mouseup",d),new MutationObserver((o,m)=>{document.contains(e)||(document.removeEventListener("mousemove",s),document.removeEventListener("mouseup",d),m.disconnect())}).observe(document.body,{childList:!0,subtree:!0})}function N(e){let n=document.createElement("textarea");n.value=e,n.style.cssText="position:fixed;opacity:0;pointer-events:none",document.body.appendChild(n),n.select(),document.execCommand("copy"),document.body.removeChild(n)}function H(e){navigator.clipboard?.writeText?navigator.clipboard.writeText(e).catch(()=>N(e)):N(e)}function B(e,n){if(document.getElementById(e))return;let t=document.createElement("style");t.id=e,t.textContent=n,(document.head||document.documentElement).appendChild(t)}function L(e){e.addEventListener("keydown",n=>n.stopPropagation()),e.addEventListener("keyup",n=>n.stopPropagation())}function y(e,n){let t=document.createElement("span");return t.className="dcat-copy-val",t.textContent=e,t.title=`Click to copy: ${n}`,t.addEventListener("click",()=>{H(n),t.classList.add("dcat-copied"),setTimeout(()=>t.classList.remove("dcat-copied"),1200)}),t}function X(e){let n=document.createElement("div");n.className="dcat-search";let t=document.createElement("input");t.type="search",t.placeholder=e.placeholder,L(t);let a=I(()=>{e.onFilter(t.value.toLowerCase().trim())},e.debounceMs??100);return t.addEventListener("input",a),n.appendChild(t),{container:n,input:t,triggerFilter:()=>t.dispatchEvent(new Event("input"))}}function D(e,n){return`
+#${e} { ${n==="dialog"?`position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 380px;
+       background: #fff; border: 2px solid #1e64c8; border-radius: 8px;
+       box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+       z-index: 2147483647; overflow: hidden;
+       font-family: Segoe UI, Arial, sans-serif; font-size: 13px; color: #222;`:`position: fixed; top: 0; right: 0; width: auto; min-width: 550px; max-width: 90vw; max-height: 90vh;
+       background: #fff; border: 2px solid #1e64c8;
+       box-shadow: -4px 0 16px rgba(0,0,0,0.18);
+       z-index: 2147483647; display: flex; flex-direction: column;
+       font-family: Segoe UI, Arial, sans-serif; font-size: 13px; color: #222;`} }
+#${e} .dcat-header {
+  display: flex; align-items: center; gap: 6px;
   background: #1e64c8; color: #fff; padding: 10px 14px; flex-shrink: 0;
   cursor: move; user-select: none;
 }
-#crm-tools-optionsets-panel .cop-header-title { font-size: 14px; font-weight: 600; }
-#crm-tools-optionsets-panel .cop-close {
+#${e} .dcat-title { font-size: 14px; font-weight: 600; flex: 1; }
+#${e} .dcat-close {
   background: none; border: none; color: #fff; font-size: 18px;
   line-height: 1; cursor: pointer; padding: 0 2px; opacity: 0.85;
 }
-#crm-tools-optionsets-panel .cop-close:hover { opacity: 1; }
-#crm-tools-optionsets-panel .cop-subheader {
+#${e} .dcat-close:hover { opacity: 1; }
+#${e} .dcat-body { ${n==="dialog"?"padding: 14px; display: flex; flex-direction: column; gap: 10px;":"overflow-y: auto; overflow-x: auto; flex: 1;"} }
+#${e} .dcat-subheader {
   padding: 6px 14px; background: #e8f0fe; font-size: 12px;
   color: #1e64c8; border-bottom: 1px solid #c5d8fb; flex-shrink: 0;
 }
-#crm-tools-optionsets-panel .cop-body { overflow-y: auto; overflow-x: auto; flex: 1; }
-#crm-tools-optionsets-panel table { width: 100%; border-collapse: collapse; }
-#crm-tools-optionsets-panel thead th {
+#${e} .dcat-search {
+  padding: 8px 14px; background: #fff; border-bottom: 1px solid #c5d8fb; flex-shrink: 0;
+}
+#${e} .dcat-search input {
+  width: 100%; box-sizing: border-box; padding: 5px 10px;
+  border: 1px solid #c5d8fb; border-radius: 4px; font-size: 13px;
+  font-family: Segoe UI, Arial, sans-serif; color: #222; outline: none;
+}
+#${e} .dcat-search input:focus { border-color: #1e64c8; }
+#${e} .dcat-copy-val {
+  cursor: pointer; border-bottom: 1px dashed #1e64c8; transition: background 0.15s;
+}
+#${e} .dcat-copy-val:hover { background: #c5d8fb; border-radius: 3px; }
+#${e} .dcat-copy-val.dcat-copied { background: #b7f0c8; border-bottom-color: #2a9c52; border-radius: 3px; }
+#${e} .dcat-no-results {
+  padding: 16px; text-align: center; color: #888; font-style: italic;
+}
+`}function z(e){let n=document.getElementById(e.panelId);if(n)return n.remove(),null;let t=e.variant??"sidebar";B(e.styleId,D(e.panelId,t)+(e.extraCss??""));let a=document.createElement("div");a.id=e.panelId;let l=document.createElement("div");l.className="dcat-header";let p=document.createElement("span");p.className="dcat-title",p.textContent=e.title;let s=document.createElement("button");s.className="dcat-close",s.title="Close",s.textContent="\u2715",s.addEventListener("click",()=>a.remove()),l.append(p,s);let d=document.createElement("div");return d.className="dcat-body",a.append(l,d),document.body.appendChild(a),P(a,l,s),{panel:a,header:l,closeBtn:s,body:d}}var r="crm-tools-optionsets-panel",O="crm-tools-optionsets-style",R=`
+#${r} table { width: 100%; border-collapse: collapse; }
+#${r} thead th {
   position: sticky; top: 0; background: #f0f4ff;
   border-bottom: 2px solid #1e64c8; padding: 7px 10px; text-align: left;
   font-size: 11px; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.4px; color: #444; white-space: nowrap;
 }
-#crm-tools-optionsets-panel tbody tr:nth-child(even) { background: #f8f9ff; }
-#crm-tools-optionsets-panel tbody tr:hover { background: #dceafe; }
-#crm-tools-optionsets-panel td {
+#${r} tbody tr:nth-child(even) { background: #f8f9ff; }
+#${r} tbody tr:hover { background: #dceafe; }
+#${r} td {
   padding: 5px 10px; border-bottom: 1px solid #e8e8e8; vertical-align: top;
 }
-#crm-tools-optionsets-panel td:nth-child(1), #crm-tools-optionsets-panel th:nth-child(1) { white-space: nowrap; }
-#crm-tools-optionsets-panel td:nth-child(2), #crm-tools-optionsets-panel th:nth-child(2) { white-space: nowrap; }
-#crm-tools-optionsets-panel td:nth-child(3), #crm-tools-optionsets-panel th:nth-child(3) { white-space: nowrap; }
-#crm-tools-optionsets-panel td:nth-child(4), #crm-tools-optionsets-panel th:nth-child(4) { min-width: 180px; max-width: 360px; word-break: break-word; }
-#crm-tools-optionsets-panel td:nth-child(2) {
+#${r} td:nth-child(1), #${r} th:nth-child(1) { white-space: nowrap; }
+#${r} td:nth-child(2), #${r} th:nth-child(2) { white-space: nowrap; }
+#${r} td:nth-child(3), #${r} th:nth-child(3) { white-space: nowrap; }
+#${r} td:nth-child(4), #${r} th:nth-child(4) { min-width: 180px; max-width: 360px; word-break: break-word; }
+#${r} td:nth-child(2) {
   font-family: Consolas, monospace; font-size: 12px; color: #555;
 }
-#crm-tools-optionsets-panel .cop-null { color: #aaa; font-style: italic; }
-#crm-tools-optionsets-panel .cop-search {
-  padding: 8px 14px; background: #fff; border-bottom: 1px solid #c5d8fb;
-  flex-shrink: 0;
-}
-#crm-tools-optionsets-panel .cop-search input {
-  width: 100%; box-sizing: border-box; padding: 5px 10px;
-  border: 1px solid #c5d8fb; border-radius: 4px; font-size: 13px;
-  font-family: Segoe UI, Arial, sans-serif; color: #222; outline: none;
-}
-#crm-tools-optionsets-panel .cop-search input:focus { border-color: #1e64c8; }
-#crm-tools-optionsets-panel .cop-no-results {
-  padding: 16px; text-align: center; color: #888; font-style: italic;
-}
-#crm-tools-optionsets-panel .cop-copy-val {
-  cursor: pointer; border-bottom: 1px dashed #1e64c8;
-  transition: background 0.15s;
-}
-#crm-tools-optionsets-panel .cop-copy-val:hover { background: #c5d8fb; border-radius: 3px; }
-#crm-tools-optionsets-panel .cop-copy-val.cop-copied { background: #b7f0c8; border-bottom-color: #2a9c52; border-radius: 3px; }
-#crm-tools-optionsets-panel .cop-options-list {
+#${r} .cop-null { color: #aaa; font-style: italic; }
+#${r} .cop-options-list {
   margin: 0; padding: 0 0 0 14px; font-size: 11px; color: #666; list-style: disc;
 }
-#crm-tools-optionsets-panel .cop-options-list li { white-space: nowrap; }
-  `,document.head.appendChild(e)}function L(e,o){let t=document.createElement("span");return t.className="cop-copy-val",t.textContent=e,t.title=`Click to copy: ${o}`,t.addEventListener("click",()=>{P(o),t.classList.add("cop-copied"),setTimeout(()=>t.classList.remove("cop-copied"),1200)}),t}function B(e,o){let t=document.createElement("div");t.id=R;let a=document.createElement("div");a.className="cop-header";let i=document.createElement("span");i.className="cop-header-title",i.textContent="\u{1F518} Option Sets";let c=document.createElement("button");c.className="cop-close",c.title="Close",c.textContent="\u2715",c.addEventListener("click",()=>t.remove()),a.appendChild(i),a.appendChild(c),t.appendChild(a),z(t,a,c);let d=Xrm.Page.data.entity.getEntityName(),l=Xrm.Page.data.entity.getId(),n=document.createElement("div");if(n.className="cop-subheader",n.append("Entity: "),n.appendChild(L(d,d)),n.append("  |  ID: "),l){let s=l.replace(/^\{|\}$/g,"");n.appendChild(L(l,s))}else n.append("(new record)");n.append(`  |  ${e.length} option set field(s)`),t.appendChild(n);let p=document.createElement("div");p.className="cop-search";let r=document.createElement("input");r.type="search",r.placeholder="Search by label or schema name\u2026",r.addEventListener("keydown",s=>s.stopPropagation()),r.addEventListener("keyup",s=>s.stopPropagation()),p.appendChild(r),t.appendChild(p);let g=document.createElement("div");g.className="cop-body";let y=document.createElement("table"),k=document.createElement("thead");k.innerHTML="<tr><th>Label</th><th>Schema Name</th><th>Current Value</th><th>All Options</th></tr>",y.appendChild(k);let v=document.createElement("tbody");e.forEach(s=>{let m=s.getName(),f=o[m]||m,x=s.getText?.()??null,C=[];try{C=s.getOptions()}catch{C=[]}let u=document.createElement("tr");u.dataset.searchLabel=f.toLowerCase(),u.dataset.searchSchema=m.toLowerCase();let N=document.createElement("td");N.textContent=f;let S=document.createElement("td");S.textContent=m;let E=document.createElement("td");if(x===null){let h=document.createElement("span");h.className="cop-null",h.textContent="null",E.appendChild(h)}else E.textContent=x;let M=document.createElement("td"),w=document.createElement("ul");w.className="cop-options-list",C.forEach(h=>{let T=document.createElement("li");T.appendChild(L(String(h.value),String(h.value))),T.append(`: ${h.text}`),w.appendChild(T)}),M.appendChild(w),u.appendChild(N),u.appendChild(S),u.appendChild(E),u.appendChild(M),v.appendChild(u)}),y.appendChild(v);let b=document.createElement("div");b.className="cop-no-results",b.textContent="No matching fields.",b.style.display="none",r.addEventListener("input",I(()=>{let s=r.value.toLowerCase().trim(),m=0;v.querySelectorAll("tr").forEach(f=>{let x=!s||f.dataset.searchLabel.includes(s)||f.dataset.searchSchema.includes(s);f.style.display=x?"":"none",x&&m++}),b.style.display=m===0?"":"none"},100)),g.appendChild(y),g.appendChild(b),t.appendChild(g),document.body.appendChild(t),requestAnimationFrame(()=>{let s=y.offsetWidth;t.style.width=Math.min(Math.max(s,420),window.innerWidth*.9)+"px"})}H();})();
+#${r} .cop-options-list li { white-space: nowrap; }
+`;function F(){if(typeof Xrm>"u"||!Xrm.Page||!Xrm.Page.ui||!Xrm.Page.data)return;let e=z({panelId:r,styleId:O,title:"\u{1F518} Option Sets",extraCss:R});if(!e)return;let{panel:n,body:t}=e,a=A(),p=[...Xrm.Page.data.entity.attributes.get().filter(i=>i.getAttributeType()==="optionset"||i.getAttributeType()==="multiselectoptionset")].sort((i,c)=>{let u=(a[i.getName()]||i.getName()).toLowerCase(),h=(a[c.getName()]||c.getName()).toLowerCase();return u.localeCompare(h)}),s=Xrm.Page.data.entity.getEntityName(),d=Xrm.Page.data.entity.getId(),o=document.createElement("div");if(o.className="dcat-subheader",o.append("Entity: "),o.appendChild(y(s,s)),o.append("  |  ID: "),d){let i=d.replace(/^\{|\}$/g,"");o.appendChild(y(d,i))}else o.append("(new record)");o.append(`  |  ${p.length} option set field(s)`),n.insertBefore(o,t);let m=document.createElement("table"),g=document.createElement("thead");g.innerHTML="<tr><th>Label</th><th>Schema Name</th><th>Current Value</th><th>All Options</th></tr>",m.appendChild(g);let v=document.createElement("tbody");p.forEach(i=>{let c=i.getName(),u=a[c]||c,h=i.getText?.()??null,C=[];try{C=i.getOptions()}catch{C=[]}let f=document.createElement("tr");f.dataset.searchLabel=u.toLowerCase(),f.dataset.searchSchema=c.toLowerCase();let S=document.createElement("td");S.textContent=u;let M=document.createElement("td");M.textContent=c;let E=document.createElement("td");if(h===null){let x=document.createElement("span");x.className="cop-null",x.textContent="null",E.appendChild(x)}else E.textContent=h;let k=document.createElement("td"),w=document.createElement("ul");w.className="cop-options-list",C.forEach(x=>{let T=document.createElement("li");T.appendChild(y(String(x.value),String(x.value))),T.append(`: ${x.text}`),w.appendChild(T)}),k.appendChild(w),f.appendChild(S),f.appendChild(M),f.appendChild(E),f.appendChild(k),v.appendChild(f)}),m.appendChild(v);let b=document.createElement("div");b.className="dcat-no-results",b.textContent="No matching fields.",b.style.display="none";let $=X({placeholder:"Search by label or schema name\u2026",onFilter:i=>{let c=0;v.querySelectorAll("tr").forEach(u=>{let h=!i||u.dataset.searchLabel.includes(i)||u.dataset.searchSchema.includes(i);u.style.display=h?"":"none",h&&c++}),b.style.display=c===0?"":"none"}});L($.input),n.insertBefore($.container,t),t.appendChild(m),t.appendChild(b),requestAnimationFrame(()=>{let i=m.offsetWidth;n.style.width=Math.min(Math.max(i,420),window.innerWidth*.9)+"px"})}F();})();
