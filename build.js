@@ -16,6 +16,7 @@ const options = {
     'content/dirty-fields': 'src/content/dirty-fields/dirty-fields.ts',
     'content/open-on-api':  'src/content/open-on-api/open-on-api.ts',
     'content/open-newest-modified': 'src/content/open-newest-modified/open-newest-modified.ts',
+    'content/activate-activity': 'src/content/activate-activity/activate-activity.ts',
     'content/ribbon-toolbar': 'src/ribbon/ribbon-toolbar/ribbon-toolbar.ts',
   },
   bundle: true,
