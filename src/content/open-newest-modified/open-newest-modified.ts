@@ -4,7 +4,8 @@ import { createPanelShell, isolateKeyboard } from '../panel';
 const PANEL_ID   = 'crm-tools-newest-modified-panel';
 const STYLE_ID   = 'crm-tools-newest-modified-style';
 const LIST_ID    = 'crm-tools-newest-modified-list';
-const CACHE_KEY  = 'crm-tools-entity-cache';
+const CACHE_KEY  = '__dynamicscat_entity_cache';
+const TTL_MS     = 7 * 24 * 60 * 60 * 1000; // 7 days
 const GUID_RE    = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface EntityMeta {
@@ -17,6 +18,7 @@ interface EntityMeta {
 interface EntityCache {
   clientUrl: string;
   entities: EntityMeta[];
+  timestamp: number;
 }
 
 const EXTRA_CSS = `
@@ -32,6 +34,14 @@ const EXTRA_CSS = `
 }
 #${PANEL_ID} .cnm-input:focus { border-color: #1e64c8; }
 #${PANEL_ID} .cnm-input:disabled { background: #f5f5f5; color: #aaa; }
+#${PANEL_ID} .cnm-refresh-btn {
+  background: none; border: 1px solid #c5d8fb; border-radius: 4px;
+  cursor: pointer; font-size: 14px; padding: 4px 6px; line-height: 1;
+  transition: background 0.15s;
+}
+#${PANEL_ID} .cnm-refresh-btn:hover { background: #e8f0fe; }
+#${PANEL_ID} .cnm-refresh-btn.cnm-spinning { animation: cnm-spin 0.8s linear infinite; }
+@keyframes cnm-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 #${PANEL_ID} .cnm-sort-btn {
   flex: 1; padding: 4px 10px; border: 1px solid #c5d8fb; border-radius: 4px;
   background: #fff; font-size: 12px; font-family: inherit; color: #555; cursor: pointer;
@@ -67,10 +77,12 @@ function getDisplayName(meta: EntityMeta): string {
 
 function loadCachedEntities(clientUrl: string): EntityMeta[] | null {
   try {
-    const raw = sessionStorage.getItem(CACHE_KEY);
+    const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const cache = JSON.parse(raw) as EntityCache;
-    return cache.clientUrl === clientUrl ? cache.entities : null;
+    if (cache.clientUrl !== clientUrl) return null;
+    if (Date.now() - cache.timestamp >= TTL_MS) return null;
+    return cache.entities;
   } catch {
     return null;
   }
@@ -78,7 +90,8 @@ function loadCachedEntities(clientUrl: string): EntityMeta[] | null {
 
 function saveCachedEntities(clientUrl: string, entities: EntityMeta[]): void {
   try {
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ clientUrl, entities } satisfies EntityCache));
+    const cache: EntityCache = { clientUrl, entities, timestamp: Date.now() };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
   } catch { /* storage full — ignore */ }
 }
 
@@ -117,7 +130,11 @@ async function main(): Promise<void> {
   const datalist = document.createElement('datalist');
   datalist.id = LIST_ID;
   isolateKeyboard(input);
-  entityRow.append(entityLabel, input, datalist);
+  const refreshBtn = document.createElement('button');
+  refreshBtn.className = 'cnm-refresh-btn';
+  refreshBtn.textContent = '🔄';
+  refreshBtn.title = 'Refresh entity list';
+  entityRow.append(entityLabel, input, refreshBtn, datalist);
 
   // GUID row
   const guidRow = document.createElement('div');
@@ -183,14 +200,16 @@ async function main(): Promise<void> {
 
   body.append(entityRow, guidRow, sortRow, actionRow);
 
-  // ── Fetch entity list (sessionStorage cached) ────────────────────────────────
+  // ── Fetch entity list (localStorage cached with TTL) ───────────────────────
   let allEntities: EntityMeta[] = [];
-  const cached = loadCachedEntities(clientUrl);
-  if (cached) {
-    allEntities = cached;
-  } else {
+
+  async function fetchEntities(bypassCache = false): Promise<boolean> {
+    if (!bypassCache) {
+      const cached = loadCachedEntities(clientUrl);
+      if (cached) { allEntities = cached; return true; }
+    }
     try {
-      const res  = await fetch(
+      const res = await fetch(
         `${clientUrl}/api/data/${apiVersion}/EntityDefinitions` +
         `?$select=LogicalName,DisplayName,EntitySetName,PrimaryIdAttribute`,
       );
@@ -199,22 +218,53 @@ async function main(): Promise<void> {
         .filter(e => e.EntitySetName)
         .sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)));
       saveCachedEntities(clientUrl, allEntities);
+      return true;
     } catch {
-      input.placeholder = 'Failed to load entities';
-      showToast('Could not load entity list.', 'warn');
-      return;
+      return false;
     }
   }
 
-  for (const e of allEntities) {
-    const opt = document.createElement('option');
-    opt.value = getDisplayName(e);
-    opt.label = e.LogicalName;
-    datalist.appendChild(opt);
+  function populateDatalist(): void {
+    datalist.innerHTML = '';
+    for (const e of allEntities) {
+      const opt = document.createElement('option');
+      opt.value = getDisplayName(e);
+      opt.label = e.LogicalName;
+      datalist.appendChild(opt);
+    }
   }
-  input.placeholder = 'Type entity name…';
-  input.disabled    = false;
-  openBtn.disabled  = false;
+
+  // Initial load
+  input.placeholder = 'Loading…';
+  input.disabled = true;
+  if (await fetchEntities()) {
+    populateDatalist();
+    input.placeholder = 'Type entity name…';
+    input.disabled = false;
+    openBtn.disabled = false;
+  } else {
+    input.placeholder = 'Failed to load entities';
+    showToast('Could not load entity list.', 'warn');
+    return;
+  }
+
+  // Refresh button handler
+  refreshBtn.addEventListener('click', async () => {
+    refreshBtn.classList.add('cnm-spinning');
+    input.disabled = true;
+    input.placeholder = 'Refreshing…';
+    localStorage.removeItem(CACHE_KEY);
+    if (await fetchEntities(true)) {
+      populateDatalist();
+      input.placeholder = 'Type entity name…';
+      input.disabled = false;
+    } else {
+      input.placeholder = 'Refresh failed';
+      showToast('Could not refresh entity list.', 'warn');
+      input.disabled = false;
+    }
+    refreshBtn.classList.remove('cnm-spinning');
+  });
 
   // ── Open handler ─────────────────────────────────────────────────────────────
   const openRecord = async () => {
