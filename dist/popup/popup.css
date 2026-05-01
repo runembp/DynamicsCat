@@ -68,6 +68,10 @@ main.two-col {
 }
 
 /* ── Tool button ──────────────────────────────────── */
+.tool-btn[hidden] {
+  display: none;
+}
+
 .tool-btn {
   display: flex;
   align-items: center;

@@ -42,3 +42,5 @@ Output format is `iife` targeting `chrome120`.
 **CSS isolation** — Panel styles use a single scoped root ID (`#crm-tools-fields-panel`) with descendant selectors to avoid leaking into or inheriting from the CRM page. Inline `<style>` injection guards against double-injection via a `STYLE_ID` check.
 
 **Keyboard event isolation** — Inputs inside injected panels must call `e.stopPropagation()` on `keydown`/`keyup` to prevent the CRM host page from swallowing keyboard events.
+
+**Popup ↔ Ribbon parity** — The popup (`src/popup/`) and the ribbon toolbar (`src/ribbon/ribbon-toolbar/`) must always expose the exact same set of tools. Both surfaces consume the `ACTIONS` array from `src/actions.ts` as their single source of truth. When adding a new action, add it to `ACTIONS` and both surfaces will pick it up automatically. Conditional visibility (e.g. only on activatable entities) is controlled via the `conditional` property on `ActionDef` — both popup and ribbon respect it.

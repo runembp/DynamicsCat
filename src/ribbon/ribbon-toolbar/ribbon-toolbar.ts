@@ -11,6 +11,9 @@ const STYLE_ID   = 'crm-tools-ribbon-style';
 const DROPDOWN_ID = 'crm-tools-ribbon-dropdown';
 const CTX_BANNER_ID = 'crm-tools-ctx-banner';
 
+/** Buttons that are hidden until their probe succeeds. Keyed by conditional type. */
+const conditionalButtons: Record<string, HTMLButtonElement[]> = {};
+
 let outsideClickHandler: ((e: MouseEvent) => void) | null = null;
 
 /** Show a persistent banner when the extension context has been invalidated. */
@@ -159,6 +162,10 @@ function buildToolbar(): void {
       dropdown.style.display = 'none';
       sendAction(def.action);
     });
+    if (def.conditional) {
+      btn.style.display = 'none';
+      (conditionalButtons[def.conditional] ??= []).push(btn);
+    }
     if (def.action === 'injectShowHiddenFields' || def.action === 'injectDirtyFields') {
       activeButtons[def.action] = btn;
     }
@@ -246,7 +253,38 @@ function hasNavBar(): boolean {
   return document.getElementById('navBar') !== null;
 }
 
+/**
+ * Probe conditional actions by injecting a MAIN-world script that writes dataset flags.
+ * The ribbon runs in ISOLATED world so cannot access Xrm directly.
+ * After the probe runs, we read the dataset flag and reveal matching buttons.
+ */
+function probeConditionalActions(): void {
+  // Inject a MAIN-world script to set the activatable flag
+  const script = document.createElement('script');
+  script.textContent = `(function() {
+    try {
+      if (typeof Xrm === 'undefined' || !Xrm.Page || !Xrm.Page.data) return;
+      var attr = Xrm.Page.getAttribute('statecode');
+      if (!attr) return;
+      if (attr.getValue() !== 0) {
+        document.documentElement.dataset.${STATE_KEYS.activatable} = '1';
+      }
+    } catch(e) {}
+  })();`;
+  document.documentElement.appendChild(script);
+  script.remove();
+
+  // Read the flag (synchronous since inline script executes immediately)
+  const ds = getSharedDataset();
+  if (ds[STATE_KEYS.activatable] === '1') {
+    for (const btn of conditionalButtons['activatable'] ?? []) {
+      btn.style.display = '';
+    }
+  }
+}
+
 if (isCrmPage() && hasNavBar()) {
   buildToolbar();
   startObserver();
+  probeConditionalActions();
 }

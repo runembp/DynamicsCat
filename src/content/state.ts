@@ -8,6 +8,7 @@ export const STATE_KEYS = {
   dirtyActive: 'dynamicsCatDirtyActive',
   revealedNames: 'dynamicsCatRevealedNames',
   toggleLock: 'dynamicsCatToggleLock',
+  activatable: 'dynamicsCatActivatable',
 } as const;
 
 type StateKey = keyof typeof STATE_KEYS;
