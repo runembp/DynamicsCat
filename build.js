@@ -1,6 +1,5 @@
 import * as esbuild from 'esbuild';
-import { ESLint } from 'eslint';
-import { cpSync, copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, copyFileSync, mkdirSync } from 'node:fs';
 
 const isDev = process.argv.includes('--dev') || process.argv.includes('--watch');
 const isWatch = process.argv.includes('--watch');
@@ -42,36 +41,23 @@ function copyStatics() {
   copyFileSync('src/content/open-newest-modified/open-newest-modified.css', 'dist/content/open-newest-modified.css');
 }
 
-/** Run ESLint over src/ and print any findings. */
-async function runLint() {
-  const eslint = new ESLint();
-  const results = await eslint.lintFiles(['src/']);
-  const formatter = await eslint.loadFormatter('stylish');
-  const output = String(await formatter.format(results));
-  if (output) console.log(output);
-  const errorCount = results.reduce((n, r) => n + r.errorCount, 0);
-  if (errorCount === 0) console.log('ESLint: no errors');
-}
-
 if (isWatch) {
   const ctx = await esbuild.context({
     ...options,
     plugins: [{
       name: 'watch-extras',
       setup(build) {
-        build.onEnd(async (result) => {
-          copyStatics();
-          if (result.errors.length === 0) await runLint();
+        build.onEnd((result) => {
+          if (result.errors.length === 0) copyStatics();
         });
       },
     }],
   });
   copyStatics();
   await ctx.watch();
-  console.log('Watching for changes — ESLint runs after each rebuild…');
+  console.log('Watching for changes…');
 } else {
   await esbuild.build(options);
   copyStatics();
-  await runLint();
   console.log('Build complete → dist/');
 }

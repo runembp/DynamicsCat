@@ -7,13 +7,15 @@ Chrome Extension (Manifest V3) targeting Dynamics CRM 2016. TypeScript source co
 ```bash
 npm run build       # Production build → dist/
 npm run dev         # Dev build with inline sourcemaps (no minify)
-npm run watch       # Watch mode — rebuilds + lints on every change
+npm run watch       # Watch mode — rebuilds on every change
 npm run typecheck   # tsc --noEmit (type-check only, no output)
 npm run lint        # ESLint over src/
 npm run check       # typecheck + lint together
 ```
 
 No test suite exists. Load the extension from `dist/` in Chrome (`chrome://extensions` → Developer mode → Load unpacked → select `dist/`).
+
+**Linting workflow** — The build does NOT run the linter automatically. Run `npm run lint` (or `npm run check`) manually after a feature is complete or code changes are done, not during iterative development.
 
 ## Architecture
 

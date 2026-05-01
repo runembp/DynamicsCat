@@ -254,32 +254,23 @@ function hasNavBar(): boolean {
 }
 
 /**
- * Probe conditional actions by injecting a MAIN-world script that writes dataset flags.
+ * Probe conditional actions via background executeScript (MAIN world).
  * The ribbon runs in ISOLATED world so cannot access Xrm directly.
- * After the probe runs, we read the dataset flag and reveal matching buttons.
+ * Background runs the probe in MAIN world and returns the result.
  */
 function probeConditionalActions(): void {
-  // Inject a MAIN-world script to set the activatable flag
-  const script = document.createElement('script');
-  script.textContent = `(function() {
-    try {
-      if (typeof Xrm === 'undefined' || !Xrm.Page || !Xrm.Page.data) return;
-      var attr = Xrm.Page.getAttribute('statecode');
-      if (!attr) return;
-      if (attr.getValue() !== 0) {
-        document.documentElement.dataset.${STATE_KEYS.activatable} = '1';
+  try {
+    chrome.runtime.sendMessage({ action: 'probeActivatable' }, (response) => {
+      if (response?.activatable) {
+        const ds = getSharedDataset();
+        ds[STATE_KEYS.activatable] = '1';
+        for (const btn of conditionalButtons['activatable'] ?? []) {
+          btn.style.display = '';
+        }
       }
-    } catch(e) {}
-  })();`;
-  document.documentElement.appendChild(script);
-  script.remove();
-
-  // Read the flag (synchronous since inline script executes immediately)
-  const ds = getSharedDataset();
-  if (ds[STATE_KEYS.activatable] === '1') {
-    for (const btn of conditionalButtons['activatable'] ?? []) {
-      btn.style.display = '';
-    }
+    });
+  } catch {
+    showContextInvalidatedBanner();
   }
 }
 
