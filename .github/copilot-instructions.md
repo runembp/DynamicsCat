@@ -1,4 +1,4 @@
-# CRM Chrome Tools — Copilot Instructions
+# DynamicsCat — Copilot Instructions
 
 Chrome Extension (Manifest V3) targeting Dynamics CRM 2016. TypeScript source compiled with esbuild into `dist/`.
 

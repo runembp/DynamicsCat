@@ -54,7 +54,7 @@ graph TD
 ### Shared Utilities (`src/content/shared.ts`)
 - **Purpose:** Cross-cutting helpers bundled inline into each content script: `debounce`, `buildLabelMap` (Xrm control labels), `makeDraggable`, `copyToClipboard`, `showToast`.
 - **Dependencies:** None
-- **Dependents:** All content scripts
+- **Dependents:** All Fields, Option Sets, Show Hidden Fields, Dirty Fields, Override Readonly, Lookups Opener, Open on API, Jump to Latest, Activate Activity, Panel Shell
 
 ### Cross-Frame State (`src/content/state.ts`)
 - **Purpose:** Toggle state coordination across CRM iframes. Stores flags on the top-frame `document.documentElement.dataset` so multiple frames can detect whether a tool is active. Provides `acquireToggleLock` to prevent duplicate execution when `allFrames: true` injects the same script into multiple frames. Also stores shortcut configuration and active-state flags for Override Readonly and Lookups Opener.
