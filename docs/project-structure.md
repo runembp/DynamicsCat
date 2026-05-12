@@ -40,6 +40,10 @@ DynamicsCat/
 │       ├── dirty-fields/
 │       │   ├── dirty-fields.ts          ← Live onChange tracking with highlight injection
 │       │   └── dirty-fields.css         ← (unused — styles are inline via dynamic <style>)
+│       ├── override-readonly/
+│       │   └── override-readonly.ts     ← Modifier+click to unlock readonly fields
+│       ├── lookups-opener/
+│       │   └── lookups-opener.ts        ← Modifier+click to open lookup records in background tab
 │       ├── open-on-api/
 │       │   └── open-on-api.ts           ← Open current record as Web API JSON
 │       ├── jump-to-latest/
@@ -89,6 +93,14 @@ DynamicsCat/
 ### `src/content/dirty-fields/`
 - **Responsibility:** Live tracking of modified attributes via `onChange` subscription. Injects highlight CSS targeting CRM's `{name}_d` row wrappers.
 - **Key files:** `dirty-fields.ts`.
+
+### `src/content/override-readonly/`
+- **Responsibility:** Toggle script that registers a configurable modifier+click handler to unlock readonly fields via `setDisabled(false)`. Reads shortcut config from cross-frame state.
+- **Key files:** `override-readonly.ts`.
+
+### `src/content/lookups-opener/`
+- **Responsibility:** Toggle script that registers a configurable modifier+click handler to open populated lookup field references in a background tab. Uses `postMessage` to relay the open request to the background worker via the ribbon toolbar's message listener.
+- **Key files:** `lookups-opener.ts`.
 
 ### `src/content/open-on-api/`
 - **Responsibility:** Opens the current record as raw JSON in a new browser tab using the Dynamics Web API.

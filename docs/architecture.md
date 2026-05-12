@@ -10,6 +10,7 @@ DynamicsCat is a Chrome Extension (Manifest V3) that provides developer tools fo
 graph TD
     Popup["Popup UI<br/>(src/popup/)"] -->|chrome.runtime.sendMessage| BG["Background Service Worker<br/>(src/background.ts)"]
     BG -->|chrome.scripting.executeScript| CS["Content Scripts<br/>(src/content/*)"]
+    BG -->|chrome.storage.local| Storage["Extension Storage"]
     Ribbon["Ribbon Toolbar<br/>(src/ribbon/)"] -->|chrome.runtime.sendMessage| BG
     Actions["Action Registry<br/>(src/actions.ts)"] -.->|consumed by| Popup
     Actions -.->|consumed by| BG
@@ -19,7 +20,8 @@ graph TD
     CS -->|uses| Shared["Shared Utilities<br/>(src/content/shared.ts)"]
     CS -->|uses| State["Cross-Frame State<br/>(src/content/state.ts)"]
     Prefetch["Prefetch Entities<br/>(src/content/prefetch-entities/)"] -->|localStorage cache| LS["localStorage"]
-    Ribbon -.->|reads| State
+    Ribbon -.->|reads/writes| State
+    CS -->|postMessage openBackgroundTab| Ribbon
 ```
 
 ## Components
@@ -30,9 +32,9 @@ graph TD
 - **Dependents:** Popup, Background Service Worker, Ribbon Toolbar
 
 ### Background Service Worker (`src/background.ts`)
-- **Purpose:** Listens for messages from popup and ribbon, dispatches content scripts via `chrome.scripting.executeScript`. Also handles the `probeActivatable` message for conditional action visibility.
-- **Dependencies:** Action Registry
-- **Dependents:** Popup (indirectly via message passing), Ribbon Toolbar (via message passing)
+- **Purpose:** Listens for messages from popup and ribbon, dispatches content scripts via `chrome.scripting.executeScript`. Handles the `probeActivatable` message for conditional action visibility. For shortcut-based tools (Override Readonly, Lookups Opener), reads shortcut configuration from `chrome.storage.local` and injects it as a dataset attribute before executing the content script. Also handles `openBackgroundTab` requests from content scripts.
+- **Dependencies:** Action Registry, `chrome.storage.local`
+- **Dependents:** Popup (indirectly via message passing), Ribbon Toolbar (via message passing), Lookups Opener (via `openBackgroundTab` message)
 
 ### Popup (`src/popup/`)
 - **Purpose:** Browser-action popup UI. Renders buttons from the action registry and sends messages to the background worker to inject content scripts into the active tab.
@@ -55,9 +57,9 @@ graph TD
 - **Dependents:** All content scripts
 
 ### Cross-Frame State (`src/content/state.ts`)
-- **Purpose:** Toggle state coordination across CRM iframes. Stores flags on the top-frame `document.documentElement.dataset` so multiple frames can detect whether a tool is active. Provides `acquireToggleLock` to prevent duplicate execution when `allFrames: true` injects the same script into multiple frames.
+- **Purpose:** Toggle state coordination across CRM iframes. Stores flags on the top-frame `document.documentElement.dataset` so multiple frames can detect whether a tool is active. Provides `acquireToggleLock` to prevent duplicate execution when `allFrames: true` injects the same script into multiple frames. Also stores shortcut configuration and active-state flags for Override Readonly and Lookups Opener.
 - **Dependencies:** None
-- **Dependents:** Show Hidden Fields, Dirty Fields, Ribbon Toolbar
+- **Dependents:** Show Hidden Fields, Dirty Fields, Override Readonly, Lookups Opener, Ribbon Toolbar
 
 ### All Fields (`src/content/all-fields/`)
 - **Purpose:** Reads all `Xrm.Page` attributes and renders a sortable, searchable side panel showing label, schema name, type, and value for every field on the form.
@@ -88,6 +90,16 @@ graph TD
 - **Purpose:** Dialog panel for picking any entity and opening its most recently modified or created record. Uses OData `$orderby` and `$top=1`. Entity metadata is cached in localStorage with a 7-day TTL.
 - **Dependencies:** Panel Shell, Shared Utilities
 - **Dependents:** Prefetch Entities (shares the same cache key)
+
+### Override Readonly (`src/content/override-readonly/`)
+- **Purpose:** Toggle script that registers a modifier+click handler on the document. When active, clicking a readonly field with the configured modifier key (default: Alt) unlocks it via `setDisabled(false)`. Shortcut configuration is read from cross-frame state (written by background worker from `chrome.storage.local`).
+- **Dependencies:** Shared Utilities, Cross-Frame State
+- **Dependents:** None
+
+### Lookups Opener (`src/content/lookups-opener/`)
+- **Purpose:** Toggle script that registers a modifier+click handler. When active, clicking a populated lookup field with the configured modifier key (default: Ctrl) opens the referenced record in a background tab via `postMessage` to the top frame, which the ribbon toolbar relays to the background worker's `openBackgroundTab` handler.
+- **Dependencies:** Shared Utilities, Cross-Frame State
+- **Dependents:** None
 
 ### Activate Activity (`src/content/activate-activity/`)
 - **Purpose:** Reactivates a closed activity by PATCHing `statecode=0, statuscode=1` via the Web API. Only visible when the current record's statecode is non-zero (conditionally shown via `probeActivatable`).
