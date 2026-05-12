@@ -1,19 +1,19 @@
 # DynamicsCat
 
-A Chrome Extension for Dynamics CRM 2016 — helper tools for form field inspection, option set browsing, and ribbon toolbar automation.
+A Chrome Extension (Manifest V3) for Dynamics CRM 2016 — developer tools for form field inspection, option set browsing, record manipulation, and a ribbon toolbar that auto-injects on CRM pages.
 
 ## Quickstart (no build required)
 
 The `dist/` folder is included in the repo — no Node.js needed.
 
-1. [Download or clone this repository](https://github.com/runembp/CRMChromeTools)
+1. [Download or clone this repository](https://github.com/runembp/DynamicsCat)
 2. Open Chrome and navigate to `chrome://extensions`
 3. Enable **Developer mode** (toggle in the top-right corner)
 4. Click **Load unpacked** and select the `dist/` folder
 
 The extension icon will appear in the toolbar. Pin it for easy access.
 
-> **Ribbon Toolbar** requires a local config file to target your CRM URL — see [Local deployment configuration](#local-deployment-configuration) below.
+> The **Ribbon Toolbar** auto-injects on any page that looks like a Dynamics CRM page (detected via `body[scroll=no]` or `div[data-id=topBar]`). Tools are also accessible via the popup icon.
 
 ---
 
@@ -33,8 +33,10 @@ npm install
 ```bash
 npm run build       # Production build → dist/
 npm run dev         # Dev build with inline sourcemaps (no minify)
-npm run watch       # Watch mode — rebuilds + lints on file changes
-npm run check       # TypeScript type-check + ESLint
+npm run watch       # Watch mode — rebuilds on every change
+npm run typecheck   # tsc --noEmit (type-check only, no output)
+npm run lint        # ESLint over src/
+npm run check       # typecheck + lint together
 ```
 
 ### Load the extension in Chrome (after building)
@@ -43,75 +45,37 @@ npm run check       # TypeScript type-check + ESLint
 2. Enable **Developer mode** (toggle in the top-right corner)
 3. Click **Load unpacked** and select the `dist/` folder
 
-### Local deployment configuration
-
-The extension includes a ribbon toolbar that auto-injects on CRM pages.
-The target URL pattern is **not** hardcoded in the repository — you configure it locally:
-
-```bash
-cp crm.config.example.json crm.config.json
-```
-
-Edit `crm.config.json` and replace the placeholder match with your CRM deployment URL:
-
-```json
-{
-  "content_scripts": [
-    {
-      "matches": ["*://YOUR_SUBDOMAIN.YOUR_DOMAIN.TLD/YOUR_PATH*"],
-      "js": ["content/ribbon-toolbar.js"],
-      "run_at": "document_idle"
-    }
-  ]
-}
-```
-
-Then rebuild. `crm.config.json` is gitignored and never committed.
-
-> Without `crm.config.json` the extension still works — the ribbon toolbar and other tools are accessible via the popup icon on any CRM page.
-
-## Project Structure
-
-```
-DynamicsCat/
-├── manifest.json              # Chrome Extension manifest (MV3) — no deployment URLs
-├── crm.config.example.json    # Template for local deployment config (copy → crm.config.json)
-├── build.js                   # esbuild build script; merges crm.config.json into dist/manifest.json
-├── src/
-│   ├── background.ts          # Service worker placeholder
-│   ├── popup/                 # Popup UI — dispatches content scripts
-│   └── content/               # Scripts injected into CRM pages
-│       ├── all-fields.ts      # Show all form field names, values, and types
-│       ├── option-sets.ts     # Browse option set values for all fields
-│       ├── show-hidden-fields.ts  # Reveal hidden form fields
-│       └── ribbon-toolbar.ts  # Auto-injected floating toolbar (requires crm.config.json)
-└── icons/                     # Extension icons
-```
-
 ## Features
 
-- **All Fields** — Inspect every field on the active CRM form: name, value, type
-- **Option Sets** — List option set values and labels for all fields
-- **Show Hidden Fields** — Reveal fields hidden by form rules
-- **Dirty Fields** — Highlight fields modified since the form loaded
+- **All Fields** — Inspect every field on the active CRM form: label, schema name, type, value
+- **Option Sets** — Browse option set values and labels for all optionset fields, with click-to-copy
+- **Show Hidden Fields** — Toggle visibility of fields hidden by form rules
+- **Dirty Fields** — Live-track modified fields with visual highlights
+- **Override Readonly** — Modifier+click to unlock readonly fields (configurable shortcut, default: Alt+Click)
+- **Lookups Opener** — Modifier+click to open lookup references in a background tab (configurable shortcut, default: Ctrl+Click)
 - **Open on API** — Open the current record as raw JSON in the Web API
-- **Open Newest Modified** — Pick any entity and open its most recently modified or created record
-- **Ribbon Toolbar** — Floating toolbar auto-injected on CRM pages (configure via `crm.config.json`)
+- **Jump to Latest** — Pick any entity and open its most recently modified or created record
+- **Activate Activity** — Reactivate a closed activity (conditionally shown when statecode ≠ 0)
+- **Ribbon Toolbar** — Floating toolbar auto-injected in the CRM nav bar, mirroring all popup tools
+
+## Documentation
+
+- [Architecture](docs/architecture.md) — system architecture and component diagram
+- [Glossary](docs/glossary.md) — domain terminology
+- [Project Structure](docs/project-structure.md) — folder layout and module responsibilities
 
 ---
 
 ## Adding a New Tool
 
-When adding a new tool, **both surfaces must be updated together** — they must always stay in sync:
+All tools are registered in `src/actions.ts`. The popup and ribbon toolbar both consume the `ACTIONS` array as their single source of truth, so adding a new action there automatically wires it into both surfaces.
 
 | File | What to do |
 |------|-----------|
-| `src/popup/popup.html` | Add a `<button id="btn-<action>">` in the correct section |
-| `src/popup/popup.ts` | Bind the button with `bindButton('btn-<action>', '<action>')` |
-| `src/ribbon/ribbon-toolbar/ribbon-toolbar.ts` | Add a dropdown button via `makeDropdownBtn` and wire `sendAction('<action>')` |
-| `src/background.ts` | Add `<action>: { file: 'content/<script>.js' }` to `ACTION_CONFIGS` |
-| `src/content/<script>/` | Implement the content script (follow toggle + guard patterns) |
-| `build.js` | Add entry point + any CSS copy in `copyStatics()` |
+| `src/actions.ts` | Add an entry to the `ACTIONS` array with action name, script file, label, icon, and `popupBtnId` |
+| `src/popup/popup.html` | Add a `<button id="btn-<action>">` in the correct section (popup.ts binds it automatically via `popupBtnId`) |
+| `src/content/<tool>/` | Implement the content script (follow toggle + guard patterns from existing tools) |
+| `build.js` | Add the entry point to `entryPoints` + any CSS copy in `copyStatics()` |
 
-> **Rule:** A tool that appears in the popup must also appear in the ribbon dropdown, and vice versa. Never ship one without the other.
+> **Rule:** A tool that appears in the popup must also appear in the ribbon dropdown, and vice versa. Both are driven by `ACTIONS` — keep them in sync by adding the action there.
 
