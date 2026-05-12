@@ -3,8 +3,19 @@
 
 import { ACTION_MAP } from './actions';
 
+const DEFAULT_READONLY_SHORTCUT = 'alt';
+const DEFAULT_LOOKUPS_OPENER_SHORTCUT = 'ctrl';
+
 chrome.runtime.onMessage.addListener(
   (message: Record<string, unknown>, sender, sendResponse): boolean | undefined => {
+    if (message.action === 'openBackgroundTab') {
+      const url = message.url as string | undefined;
+      if (url) {
+        chrome.tabs.create({ url, active: false });
+      }
+      return undefined;
+    }
+
     const tabId = (message.tabId as number | undefined) ?? sender.tab?.id;
     if (tabId === undefined) return undefined;
 
@@ -27,6 +38,66 @@ chrome.runtime.onMessage.addListener(
       return true; // keep message channel open for async sendResponse
     }
 
+    if (message.action === 'injectOverrideReadonly') {
+      const config = ACTION_MAP.injectOverrideReadonly;
+      void (async () => {
+        try {
+          const result = await chrome.storage.local.get('readonlyShortcut');
+          const shortcutValue = typeof result.readonlyShortcut === 'string'
+            ? result.readonlyShortcut
+            : DEFAULT_READONLY_SHORTCUT;
+          await chrome.scripting.executeScript({
+            target: { tabId, allFrames: config.allFrames },
+            world: 'MAIN',
+            func: (shortcut: string) => {
+              document.documentElement.dataset.dynamicsCatReadonlyShortcut = shortcut;
+            },
+            args: [shortcutValue],
+          });
+          await chrome.scripting.executeScript({
+            target: { tabId, allFrames: config.allFrames },
+            files: [config.file],
+            world: 'MAIN',
+          });
+        } catch {
+          sendResponse({ ok: false });
+          return;
+        }
+        sendResponse({ ok: true });
+      })();
+      return true;
+    }
+
+    if (message.action === 'injectLookupsOpener') {
+      const config = ACTION_MAP.injectLookupsOpener;
+      void (async () => {
+        try {
+          const result = await chrome.storage.local.get('lookupsOpenerShortcut');
+          const shortcutValue = typeof result.lookupsOpenerShortcut === 'string'
+            ? result.lookupsOpenerShortcut
+            : DEFAULT_LOOKUPS_OPENER_SHORTCUT;
+          await chrome.scripting.executeScript({
+            target: { tabId, allFrames: config.allFrames },
+            world: 'MAIN',
+            func: (shortcut: string) => {
+              document.documentElement.dataset.dynamicsCatLookupsOpenerShortcut = shortcut;
+            },
+            args: [shortcutValue],
+          });
+          await chrome.scripting.executeScript({
+            target: { tabId, allFrames: config.allFrames },
+            files: [config.file],
+            world: 'MAIN',
+          });
+        } catch {
+          sendResponse({ ok: false });
+          return;
+        }
+        sendResponse({ ok: true });
+      })();
+      return true;
+    }
+
     const config = ACTION_MAP[message.action as string];
     if (!config) return undefined;
 
@@ -38,3 +109,13 @@ chrome.runtime.onMessage.addListener(
     return undefined;
   },
 );
+
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason !== 'install') return;
+  chrome.storage.local.set({
+    readonlyOverride: true,
+    readonlyShortcut: DEFAULT_READONLY_SHORTCUT,
+    lookupsOpenerOverride: true,
+    lookupsOpenerShortcut: DEFAULT_LOOKUPS_OPENER_SHORTCUT,
+  });
+});

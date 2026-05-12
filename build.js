@@ -13,6 +13,8 @@ const options = {
     'content/option-sets': 'src/content/option-sets/option-sets.ts',
     'content/show-hidden-fields': 'src/content/show-hidden-fields/show-hidden-fields.ts',
     'content/dirty-fields': 'src/content/dirty-fields/dirty-fields.ts',
+    'content/override-readonly': 'src/content/override-readonly/override-readonly.ts',
+    'content/lookups-opener': 'src/content/lookups-opener/lookups-opener.ts',
     'content/open-on-api':  'src/content/open-on-api/open-on-api.ts',
     'content/jump-to-latest': 'src/content/jump-to-latest/jump-to-latest.ts',
     'content/activate-activity': 'src/content/activate-activity/activate-activity.ts',

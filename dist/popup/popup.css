@@ -124,3 +124,61 @@ main.two-col {
 .btn-label {
   flex-grow: 1;
 }
+
+/* ── Settings row ─────────────────────────────────── */
+.tool-with-settings {
+  display: flex;
+  flex-direction: column;
+}
+
+.tool-inline-row {
+  display: flex;
+  align-items: center;
+}
+
+.tool-inline-row .tool-btn {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.settings-gear {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  margin-right: 12px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: 0.6;
+  flex-shrink: 0;
+  transition: opacity 0.1s;
+}
+
+.settings-gear:hover {
+  opacity: 1;
+  background: #f1f3f4;
+}
+
+.settings-panel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #5f6368;
+  padding: 0 12px 8px 40px;
+}
+
+.settings-panel[hidden] {
+  display: none;
+}
+
+.settings-select {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 2px 4px;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  background: #fff;
+  color: #1f1f1f;
+}

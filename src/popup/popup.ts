@@ -1,9 +1,31 @@
 import { ACTIONS } from '../actions';
 
+const DEFAULT_READONLY_SHORTCUT = 'alt';
+const DEFAULT_LOOKUPS_OPENER_SHORTCUT = 'ctrl';
+
+type ShortcutSettings = {
+  readonlyShortcut?: string;
+  lookupsOpenerShortcut?: string;
+};
+
 function sendAction(action: string): void {
   chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
     if (!tab?.id) return;
     chrome.runtime.sendMessage({ action, tabId: tab.id });
+  });
+}
+
+function stopKeyPropagation(element: HTMLSelectElement): void {
+  for (const eventName of ['keydown', 'keyup']) {
+    element.addEventListener(eventName, (e) => {
+      e.stopPropagation();
+    });
+  }
+}
+
+function loadShortcutSettings(callback: (settings: ShortcutSettings) => void): void {
+  chrome.storage.local.get(['readonlyShortcut', 'lookupsOpenerShortcut'], (result) => {
+    callback(result as ShortcutSettings);
   });
 }
 
@@ -53,7 +75,76 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error(`[DynamicsCat] Popup element #${def.popupBtnId} not found`);
       continue;
     }
-    btn.addEventListener('click', () => sendAction(def.action));
+    btn.addEventListener('click', () => {
+      if (def.action === 'injectOverrideReadonly') {
+        chrome.storage.local.get('readonlyOverride', (result) => {
+          chrome.storage.local.set({ readonlyOverride: result.readonlyOverride === false });
+        });
+      }
+      if (def.action === 'injectLookupsOpener') {
+        chrome.storage.local.get('lookupsOpenerOverride', (result) => {
+          chrome.storage.local.set({ lookupsOpenerOverride: result.lookupsOpenerOverride === false });
+        });
+      }
+      sendAction(def.action);
+    });
+  }
+
+  // --- Shortcut settings ---
+  const readonlyGearBtn = document.getElementById('btn-readonly-settings');
+  const readonlySettingsPanel = document.getElementById('readonly-settings-panel');
+  const readonlyShortcutSelect = document.getElementById('readonly-shortcut-select') as HTMLSelectElement | null;
+  const lookupsGearBtn = document.getElementById('btn-lookups-opener-settings');
+  const lookupsSettingsPanel = document.getElementById('lookups-opener-settings-panel');
+  const lookupsShortcutSelect = document.getElementById('lookups-opener-shortcut-select') as HTMLSelectElement | null;
+
+  const toggleSettingsPanel = (button: HTMLElement | null, panel: HTMLElement | null): void => {
+    if (!button || !panel) return;
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      panel.hidden = !panel.hidden;
+    });
+  };
+
+  toggleSettingsPanel(readonlyGearBtn, readonlySettingsPanel);
+  toggleSettingsPanel(lookupsGearBtn, lookupsSettingsPanel);
+
+  if (readonlyShortcutSelect && lookupsShortcutSelect) {
+    loadShortcutSettings((result) => {
+      readonlyShortcutSelect.value = result.readonlyShortcut || DEFAULT_READONLY_SHORTCUT;
+      lookupsShortcutSelect.value = result.lookupsOpenerShortcut || DEFAULT_LOOKUPS_OPENER_SHORTCUT;
+    });
+
+    const bindShortcutSelect = (
+      select: HTMLSelectElement,
+      storageKey: 'readonlyShortcut' | 'lookupsOpenerShortcut',
+      otherStorageKey: 'readonlyShortcut' | 'lookupsOpenerShortcut',
+      otherToolLabel: string,
+      defaultValue: string,
+    ): void => {
+      let previousValue = defaultValue;
+      select.addEventListener('focus', () => {
+        previousValue = select.value;
+      });
+      select.addEventListener('change', () => {
+        const nextValue = select.value;
+        loadShortcutSettings((settings) => {
+          const otherValue = settings[otherStorageKey]
+            || (otherStorageKey === 'readonlyShortcut' ? DEFAULT_READONLY_SHORTCUT : DEFAULT_LOOKUPS_OPENER_SHORTCUT);
+          if (nextValue === otherValue) {
+            alert(`Shortcut already used by ${otherToolLabel}`);
+            select.value = previousValue;
+            return;
+          }
+          chrome.storage.local.set({ [storageKey]: nextValue });
+          previousValue = nextValue;
+        });
+      });
+      stopKeyPropagation(select);
+    };
+
+    bindShortcutSelect(readonlyShortcutSelect, 'readonlyShortcut', 'lookupsOpenerShortcut', 'Lookups Opener', DEFAULT_READONLY_SHORTCUT);
+    bindShortcutSelect(lookupsShortcutSelect, 'lookupsOpenerShortcut', 'readonlyShortcut', 'Override Readonly', DEFAULT_LOOKUPS_OPENER_SHORTCUT);
   }
 
   // Conditionally show the Activate button

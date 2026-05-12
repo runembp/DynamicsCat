@@ -4,12 +4,59 @@
 // Does NOT touch Xrm — delegates actions to background via sendMessage.
 
 import { ACTIONS } from '../../actions';
-import { STATE_KEYS, getSharedDataset } from '../../content/state';
+import { STATE_KEYS, getSharedDataset, writeFlag } from '../../content/state';
 
 const TOOLBAR_ID = 'crm-tools-ribbon-toolbar';
 const STYLE_ID   = 'crm-tools-ribbon-style';
 const DROPDOWN_ID = 'crm-tools-ribbon-dropdown';
 const CTX_BANNER_ID = 'crm-tools-ctx-banner';
+const DEFAULT_READONLY_SHORTCUT = 'alt';
+const DEFAULT_LOOKUPS_OPENER_SHORTCUT = 'ctrl';
+
+type ShortcutStorage = {
+  readonlyShortcut?: string;
+  lookupsOpenerShortcut?: string;
+};
+
+function createShortcutSelect(): HTMLSelectElement {
+  const select = document.createElement('select');
+  select.className = 'crt-readonly-settings-select';
+
+  const options = [
+    { value: 'alt+shift', label: 'Alt+Shift+Click' },
+    { value: 'alt', label: 'Alt+Click' },
+    { value: 'shift', label: 'Shift+Click' },
+    { value: 'ctrl', label: 'Ctrl+Click' },
+    { value: 'ctrl+shift', label: 'Ctrl+Shift+Click' },
+  ];
+
+  for (const option of options) {
+    const optionEl = document.createElement('option');
+    optionEl.value = option.value;
+    optionEl.textContent = option.label;
+    select.appendChild(optionEl);
+  }
+
+  return select;
+}
+
+function loadShortcutSettings(callback: (settings: ShortcutStorage) => void): void {
+  try {
+    chrome.storage.local.get(['readonlyShortcut', 'lookupsOpenerShortcut'], (result) => {
+      callback(result as ShortcutStorage);
+    });
+  } catch {
+    showContextInvalidatedBanner();
+  }
+}
+
+function stopKeyPropagation(element: HTMLSelectElement): void {
+  for (const eventName of ['keydown', 'keyup']) {
+    element.addEventListener(eventName, (e) => {
+      e.stopPropagation();
+    });
+  }
+}
 
 /** Buttons that are hidden until their probe succeeds. Keyed by conditional type. */
 const conditionalButtons: Record<string, HTMLButtonElement[]> = {};
@@ -68,7 +115,30 @@ function injectStyles(): void {
 .crt-btn-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
 .crt-btn-active-dot { width: 8px; height: 8px; border-radius: 50%; background: #2e7d32; margin-left: auto; flex-shrink: 0; display: none; }
 .crt-dropdown-btn.crt-active .crt-btn-active-dot { display: block; }
-  `;
+.crt-readonly-settings-wrap { display: flex; flex-direction: column; }
+.crt-readonly-settings-row {
+  display: flex; align-items: center;
+}
+.crt-readonly-settings-row .crt-dropdown-btn {
+  flex: 1 1 auto; width: auto; min-width: 0;
+}
+.crt-readonly-settings-gear {
+  background: transparent; border: none; cursor: pointer;
+  font-size: 14px; padding: 2px 4px; margin-right: 16px; border-radius: 4px; opacity: 0.6;
+  flex-shrink: 0;
+}
+.crt-readonly-settings-gear:hover { opacity: 1; background: #f1f3f4; }
+.crt-readonly-settings-panel {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: #5f6368;
+  padding: 0 16px 8px 48px;
+}
+.crt-readonly-settings-panel[hidden] { display: none; }
+.crt-readonly-settings-select {
+  font-family: inherit; font-size: 12px; padding: 2px 4px;
+  border: 1px solid #dadce0; border-radius: 4px; background: #fff; color: #1f1f1f;
+}
+   `;
   (document.head || document.documentElement).appendChild(style);
 }
 
@@ -151,26 +221,171 @@ function buildToolbar(): void {
   colRight.style.cssText = 'border-left: 1px solid #e8eaed;';
 
   // Actions are split into two columns: first 4 left, rest right
-  const LEFT_ACTIONS = new Set(['injectAllFields', 'injectOptionSets', 'injectShowHiddenFields', 'injectDirtyFields']);
+  const LEFT_ACTIONS = new Set([
+    'injectAllFields',
+    'injectOptionSets',
+    'injectShowHiddenFields',
+    'injectDirtyFields',
+    'injectOverrideReadonly',
+    'injectLookupsOpener',
+  ]);
 
   // Track buttons that show active state
   const activeButtons: Record<string, HTMLButtonElement> = {};
+  let readonlyShortcutSelect: HTMLSelectElement | null = null;
+  let lookupsOpenerShortcutSelect: HTMLSelectElement | null = null;
+
+  const bindShortcutSelect = (
+    select: HTMLSelectElement,
+    storageKey: 'readonlyShortcut' | 'lookupsOpenerShortcut',
+    otherStorageKey: 'readonlyShortcut' | 'lookupsOpenerShortcut',
+    otherToolLabel: string,
+    defaultValue: string,
+  ): void => {
+    let previousValue = defaultValue;
+    select.addEventListener('focus', () => {
+      previousValue = select.value;
+    });
+    select.addEventListener('change', () => {
+      const nextValue = select.value;
+      loadShortcutSettings((settings) => {
+        const otherValue = settings[otherStorageKey]
+          || (otherStorageKey === 'readonlyShortcut' ? DEFAULT_READONLY_SHORTCUT : DEFAULT_LOOKUPS_OPENER_SHORTCUT);
+        if (nextValue === otherValue) {
+          alert(`Shortcut already used by ${otherToolLabel}`);
+          select.value = previousValue;
+          return;
+        }
+        try {
+          chrome.storage.local.set({ [storageKey]: nextValue });
+          previousValue = nextValue;
+        } catch {
+          showContextInvalidatedBanner();
+        }
+      });
+    });
+    stopKeyPropagation(select);
+  };
+
+  const createShortcutSettingsControl = (
+    btn: HTMLButtonElement,
+    storageKey: 'readonlyShortcut' | 'lookupsOpenerShortcut',
+    defaultValue: string,
+    otherStorageKey: 'readonlyShortcut' | 'lookupsOpenerShortcut',
+    otherToolLabel: string,
+  ): HTMLDivElement => {
+    const wrap = document.createElement('div');
+    wrap.className = 'crt-readonly-settings-wrap';
+
+    const settingsRow = document.createElement('div');
+    settingsRow.className = 'crt-readonly-settings-row';
+
+    const gearBtn = document.createElement('button');
+    gearBtn.type = 'button';
+    gearBtn.className = 'crt-readonly-settings-gear';
+    gearBtn.title = 'Shortcut settings';
+    gearBtn.setAttribute('aria-label', 'Shortcut settings');
+    gearBtn.textContent = '⚙️';
+
+    const settingsPanel = document.createElement('div');
+    settingsPanel.className = 'crt-readonly-settings-panel';
+    settingsPanel.hidden = true;
+
+    const label = document.createElement('label');
+    label.textContent = 'Shortcut:';
+
+    const select = createShortcutSelect();
+
+    const loadShortcut = (): void => {
+      loadShortcutSettings((result) => {
+        select.value = storageKey === 'readonlyShortcut'
+          ? result.readonlyShortcut || DEFAULT_READONLY_SHORTCUT
+          : result.lookupsOpenerShortcut || DEFAULT_LOOKUPS_OPENER_SHORTCUT;
+      });
+    };
+
+    gearBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const nextHidden = !settingsPanel.hidden;
+      settingsPanel.hidden = nextHidden;
+      if (!nextHidden) loadShortcut();
+    });
+
+    bindShortcutSelect(select, storageKey, otherStorageKey, otherToolLabel, defaultValue);
+
+    settingsPanel.appendChild(label);
+    settingsPanel.appendChild(select);
+    settingsRow.appendChild(btn);
+    settingsRow.appendChild(gearBtn);
+    wrap.appendChild(settingsRow);
+    wrap.appendChild(settingsPanel);
+    return wrap;
+  };
 
   for (const def of ACTIONS) {
     const btn = makeDropdownBtn(def.icon, def.label);
     btn.addEventListener('click', () => {
       dropdown.style.display = 'none';
+      if (def.action === 'injectOverrideReadonly') {
+        const willBeActive = getSharedDataset()[STATE_KEYS.readonlyOverrideActive] !== '1';
+        try { chrome.storage.local.set({ readonlyOverride: willBeActive }); } catch { /* context invalidated */ }
+      }
+      if (def.action === 'injectLookupsOpener') {
+        const willBeActive = getSharedDataset()[STATE_KEYS.lookupsOpenerActive] !== '1';
+        try { chrome.storage.local.set({ lookupsOpenerOverride: willBeActive }); } catch { /* context invalidated */ }
+      }
       sendAction(def.action);
     });
     if (def.conditional) {
       btn.style.display = 'none';
       (conditionalButtons[def.conditional] ??= []).push(btn);
     }
-    if (def.action === 'injectShowHiddenFields' || def.action === 'injectDirtyFields') {
+    if (
+      def.action === 'injectShowHiddenFields'
+      || def.action === 'injectDirtyFields'
+      || def.action === 'injectOverrideReadonly'
+      || def.action === 'injectLookupsOpener'
+    ) {
       activeButtons[def.action] = btn;
     }
-    (LEFT_ACTIONS.has(def.action) ? colLeft : colRight).appendChild(btn);
+
+    const parent = LEFT_ACTIONS.has(def.action) ? colLeft : colRight;
+    if (def.action !== 'injectOverrideReadonly' && def.action !== 'injectLookupsOpener') {
+      parent.appendChild(btn);
+      continue;
+    }
+    if (def.action === 'injectOverrideReadonly') {
+    const wrap = createShortcutSettingsControl(
+      btn,
+      'readonlyShortcut',
+      DEFAULT_READONLY_SHORTCUT,
+      'lookupsOpenerShortcut',
+      'Lookups Opener',
+    );
+      readonlyShortcutSelect = wrap.querySelector('select');
+      parent.appendChild(wrap);
+      continue;
+    }
+
+    const wrap = createShortcutSettingsControl(
+      btn,
+      'lookupsOpenerShortcut',
+      DEFAULT_LOOKUPS_OPENER_SHORTCUT,
+      'readonlyShortcut',
+      'Override Readonly',
+    );
+    lookupsOpenerShortcutSelect = wrap.querySelector('select');
+    parent.appendChild(wrap);
   }
+
+  loadShortcutSettings((result) => {
+    if (readonlyShortcutSelect) {
+      readonlyShortcutSelect.value = result.readonlyShortcut || DEFAULT_READONLY_SHORTCUT;
+    }
+    if (lookupsOpenerShortcutSelect) {
+      lookupsOpenerShortcutSelect.value = result.lookupsOpenerShortcut || DEFAULT_LOOKUPS_OPENER_SHORTCUT;
+    }
+  });
 
   dropdown.appendChild(colLeft);
   dropdown.appendChild(colRight);
@@ -192,8 +407,12 @@ function buildToolbar(): void {
       const ds = getSharedDataset();
       const hiddenBtn = activeButtons['injectShowHiddenFields'];
       const dirtyBtn = activeButtons['injectDirtyFields'];
+      const readonlyBtn = activeButtons['injectOverrideReadonly'];
+      const lookupsBtn = activeButtons['injectLookupsOpener'];
       if (hiddenBtn) setButtonActive(hiddenBtn, ds[STATE_KEYS.hiddenActive] === '1');
       if (dirtyBtn) setButtonActive(dirtyBtn, ds[STATE_KEYS.dirtyActive] === '1');
+      if (readonlyBtn) setButtonActive(readonlyBtn, ds[STATE_KEYS.readonlyOverrideActive] === '1');
+      if (lookupsBtn) setButtonActive(lookupsBtn, ds[STATE_KEYS.lookupsOpenerActive] === '1');
       dropdown.style.display = 'grid';
     }
   });
@@ -278,4 +497,31 @@ if (isCrmPage() && hasNavBar()) {
   buildToolbar();
   startObserver();
   probeConditionalActions();
+  try {
+    chrome.storage.local.get(['readonlyOverride', 'lookupsOpenerOverride'], (result) => {
+      if (result.readonlyOverride !== false) {
+        writeFlag('readonlySilentInject', '1');
+        sendAction('injectOverrideReadonly');
+      }
+      if (result.lookupsOpenerOverride !== false) {
+        writeFlag('lookupsOpenerSilentInject', '1');
+        sendAction('injectLookupsOpener');
+      }
+    });
+  } catch {
+    showContextInvalidatedBanner();
+  }
+
+  // Listen for background-tab-open requests from MAIN world content scripts (via postMessage across frames)
+  window.addEventListener('message', (e: MessageEvent) => {
+    if (e.origin !== window.location.origin) return;
+    if (e.data?.type !== 'dynamicscat-open-background-tab' || !e.data.url) return;
+    const url = e.data.url as string;
+    if (!url.startsWith(window.location.origin + '/')) return;
+    try {
+      chrome.runtime.sendMessage({ action: 'openBackgroundTab', url });
+    } catch {
+      showContextInvalidatedBanner();
+    }
+  });
 }

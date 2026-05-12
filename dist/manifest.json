@@ -5,7 +5,8 @@
   "description": "DynamicsCat — Dynamics CRM 2016 helper tools for form field inspection and more.",
   "permissions": [
     "activeTab",
-    "scripting"
+    "scripting",
+    "storage"
   ],
   "host_permissions": [
     "*://*/*"

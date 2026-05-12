@@ -6,6 +6,12 @@
 export const STATE_KEYS = {
   hiddenActive: 'dynamicsCatHiddenActive',
   dirtyActive: 'dynamicsCatDirtyActive',
+  readonlyOverrideActive: 'dynamicsCatReadonlyOverrideActive',
+  readonlySilentInject: 'dynamicsCatReadonlySilentInject',
+  readonlyShortcut: 'dynamicsCatReadonlyShortcut',
+  lookupsOpenerActive: 'dynamicsCatLookupsOpenerActive',
+  lookupsOpenerSilentInject: 'dynamicsCatLookupsOpenerSilentInject',
+  lookupsOpenerShortcut: 'dynamicsCatLookupsOpenerShortcut',
   revealedNames: 'dynamicsCatRevealedNames',
   toggleLock: 'dynamicsCatToggleLock',
   activatable: 'dynamicsCatActivatable',
