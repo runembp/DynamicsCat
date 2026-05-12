@@ -4,8 +4,9 @@ import { createPanelShell, isolateKeyboard } from '../panel';
 const PANEL_ID   = 'crm-tools-newest-modified-panel';
 const STYLE_ID   = 'crm-tools-newest-modified-style';
 const LIST_ID    = 'crm-tools-newest-modified-list';
-const CACHE_KEY  = '__dynamicscat_entity_cache';
-const TTL_MS     = 7 * 24 * 60 * 60 * 1000; // 7 days
+const CACHE_KEY       = '__dynamicscat_entity_cache';
+const LAST_ENTITY_KEY = '__dynamicscat_last_entity';
+const TTL_MS          = 7 * 24 * 60 * 60 * 1000; // 7 days
 const GUID_RE    = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface EntityMeta {
@@ -242,6 +243,9 @@ async function main(): Promise<void> {
     input.placeholder = 'Type entity name…';
     input.disabled = false;
     openBtn.disabled = false;
+    const lastEntity = localStorage.getItem(LAST_ENTITY_KEY);
+    if (lastEntity) input.value = lastEntity;
+    input.focus();
   } else {
     input.placeholder = 'Failed to load entities';
     showToast('Could not load entity list.', 'warn');
@@ -279,6 +283,8 @@ async function main(): Promise<void> {
       showToast(`Entity "${input.value.trim()}" not found.`, 'warn');
       return;
     }
+
+    localStorage.setItem(LAST_ENTITY_KEY, input.value.trim());
 
     const guidValue = guidInput.value.trim();
     if (GUID_RE.test(guidValue)) {

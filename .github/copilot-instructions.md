@@ -2,6 +2,11 @@
 
 Chrome Extension (Manifest V3) targeting Dynamics CRM 2016. TypeScript source compiled with esbuild into `dist/`.
 
+For project documentation, see:
+- [Architecture](../docs/architecture.md) — system architecture and component diagram
+- [Glossary](../docs/glossary.md) — domain terminology
+- [Project Structure](../docs/project-structure.md) — folder layout and module responsibilities
+
 ## Commands
 
 ```bash

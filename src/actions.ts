@@ -18,7 +18,7 @@ export const ACTIONS: ActionDef[] = [
   { action: 'injectShowHiddenFields', file: 'content/show-hidden-fields.js',  label: 'Hidden Fields',  icon: '👁', popupBtnId: 'btn-show-hidden-fields' },
   { action: 'injectDirtyFields',      file: 'content/dirty-fields.js',        label: 'Dirty Fields',   icon: '✏️', popupBtnId: 'btn-dirty-fields' },
   { action: 'openOnApi',              file: 'content/open-on-api.js',         label: 'Open on API',    icon: '🔗', popupBtnId: 'btn-open-on-api' },
-  { action: 'openNewestModified',     file: 'content/open-newest-modified.js', label: 'Jump to Latest', icon: '🕐', popupBtnId: 'btn-open-newest-modified', allFrames: false },
+  { action: 'jumpToLatest',            file: 'content/jump-to-latest.js',       label: 'Jump to Latest', icon: '🕐', popupBtnId: 'btn-jump-to-latest', allFrames: false },
   { action: 'activateActivity',      file: 'content/activate-activity.js',    label: 'Activate',       icon: '🔓', popupBtnId: 'btn-activate-activity', conditional: 'activatable' },
 ];
 
