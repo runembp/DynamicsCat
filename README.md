@@ -13,8 +13,6 @@ The `dist/` folder is included in the repo — no Node.js needed.
 
 The extension icon will appear in the toolbar. Pin it for easy access.
 
-> The **Ribbon Toolbar** auto-injects on any page that looks like a Dynamics CRM page (detected via `body[scroll=no]` or `div[data-id=topBar]`). Tools are also accessible via the popup icon.
-
 ## Features
 
 - **All Fields** — Inspect every field on the active CRM form: label, schema name, type, value
