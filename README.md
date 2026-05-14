@@ -2,6 +2,11 @@
 
 A Chrome Extension (Manifest V3) for Dynamics CRM 2016 — developer tools for form field inspection, option set browsing, record manipulation, and a ribbon toolbar that auto-injects on CRM pages.
 
+As a bonus, brings a bit (a lot) of cuteness.
+
+<img width="496" height="105" alt="image" src="https://github.com/user-attachments/assets/815b67ba-d275-45bc-b7a6-529393afce4e" />
+
+
 ## Quickstart (no build required)
 
 The `dist/` folder is included in the repo — no Node.js needed.
