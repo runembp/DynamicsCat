@@ -30,7 +30,9 @@ The extension icon will appear in the toolbar. Pin it for easy access.
 
 ## Keyboard Shortcuts
 
-DynamicsCat registers Chrome extension keyboard shortcuts via the `commands` API. Shortcuts can be customized at `chrome://extensions/shortcuts`.
+### Chrome Extension Shortcuts
+
+Registered via the Chrome `commands` API. Customizable at `chrome://extensions/shortcuts`.
 
 | Shortcut | Action | Description |
 |----------|--------|-------------|
@@ -38,6 +40,17 @@ DynamicsCat registers Chrome extension keyboard shortcuts via the `commands` API
 | **Alt+Shift+O** | Jump to Latest (Quick) | Repeat last search — opens the most recent record of the last-used entity directly, without showing the panel |
 
 > **Note:** Jump to Latest (Quick) requires a previous panel search to know which entity and settings to use. If no previous search exists, a toast will prompt you to use Alt+O first.
+
+### In-Page Modifier Shortcuts
+
+These shortcuts are active after enabling the tool via the popup or ribbon toolbar.
+
+| Shortcut | Action | Description |
+|----------|--------|-------------|
+| **Alt+Click** | Override Readonly | Click a readonly field while holding Alt to unlock it (configurable in popup settings) |
+| **Ctrl+Click** | Lookups Opener | Click a populated lookup field while holding Ctrl to open the referenced record in a background tab (configurable in popup settings) |
+
+> Both modifier shortcuts are configurable — click the ⚙️ gear icon next to the tool in the popup to choose between Alt, Ctrl, Shift, or combinations.
 
 ## Documentation
 
