@@ -21,6 +21,7 @@ export const ACTIONS: ActionDef[] = [
   { action: 'injectLookupsOpener',    file: 'content/lookups-opener.js',      label: 'Lookups Opener', icon: '🪟', popupBtnId: 'btn-lookups-opener' },
   { action: 'openOnApi',              file: 'content/open-on-api.js',         label: 'Open on API',    icon: '🔗', popupBtnId: 'btn-open-on-api' },
   { action: 'jumpToLatest',            file: 'content/jump-to-latest.js',       label: 'Jump to Latest', icon: '🕐', popupBtnId: 'btn-jump-to-latest', allFrames: false },
+  { action: 'jumpToLatestQuick',      file: 'content/jump-to-latest-quick.js', label: 'Jump to Latest (Quick)', icon: '⚡', allFrames: false },
   { action: 'activateActivity',      file: 'content/activate-activity.js',    label: 'Activate',       icon: '🔓', popupBtnId: 'btn-activate-activity', conditional: 'activatable' },
 ];
 

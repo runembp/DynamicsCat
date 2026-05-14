@@ -58,6 +58,17 @@ npm run check       # typecheck + lint together
 - **Activate Activity** — Reactivate a closed activity (conditionally shown when statecode ≠ 0)
 - **Ribbon Toolbar** — Floating toolbar auto-injected in the CRM nav bar, mirroring all popup tools
 
+## Keyboard Shortcuts
+
+DynamicsCat registers Chrome extension keyboard shortcuts via the `commands` API. Shortcuts can be customized at `chrome://extensions/shortcuts`.
+
+| Shortcut | Action | Description |
+|----------|--------|-------------|
+| **Alt+O** | Jump to Latest | Toggle the Jump to Latest panel |
+| **Alt+Shift+O** | Jump to Latest (Quick) | Repeat last search — opens the most recent record of the last-used entity directly, without showing the panel |
+
+> **Note:** Jump to Latest (Quick) requires a previous panel search to know which entity and settings to use. If no previous search exists, a toast will prompt you to use Alt+O first.
+
 ## Documentation
 
 - [Architecture](docs/architecture.md) — system architecture and component diagram

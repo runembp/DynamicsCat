@@ -93,9 +93,10 @@ export function createSearchBar(opts: {
 function baseCss(id: string, variant: 'sidebar' | 'dialog'): string {
   const containerCss = variant === 'dialog'
     ? `position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 380px;
+       max-height: 90vh;
        background: #fff; border: 2px solid #1e64c8; border-radius: 8px;
        box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-       z-index: 2147483647; overflow: hidden;
+       z-index: 2147483647; overflow: visible;
        font-family: Segoe UI, Arial, sans-serif; font-size: 13px; color: #222;`
     : `position: fixed; top: 0; right: 0; width: auto; min-width: 550px; max-width: 90vw; max-height: 90vh;
        background: #fff; border: 2px solid #1e64c8;

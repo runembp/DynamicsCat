@@ -323,6 +323,7 @@ function buildToolbar(): void {
   };
 
   for (const def of ACTIONS) {
+    if (!def.popupBtnId) continue;
     const btn = makeDropdownBtn(def.icon, def.label);
     btn.addEventListener('click', () => {
       dropdown.style.display = 'none';

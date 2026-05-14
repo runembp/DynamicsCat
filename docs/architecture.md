@@ -32,8 +32,8 @@ graph TD
 - **Dependents:** Popup, Background Service Worker, Ribbon Toolbar
 
 ### Background Service Worker (`src/background.ts`)
-- **Purpose:** Listens for messages from popup and ribbon, dispatches content scripts via `chrome.scripting.executeScript`. Handles the `probeActivatable` message for conditional action visibility. For shortcut-based tools (Override Readonly, Lookups Opener), reads shortcut configuration from `chrome.storage.local` and injects it as a dataset attribute before executing the content script. Also handles `openBackgroundTab` requests from content scripts.
-- **Dependencies:** Action Registry, `chrome.storage.local`
+- **Purpose:** Listens for messages from popup and ribbon, dispatches content scripts via `chrome.scripting.executeScript`. Handles the `probeActivatable` message for conditional action visibility. For shortcut-based tools (Override Readonly, Lookups Opener), reads shortcut configuration from `chrome.storage.local` and injects it as a dataset attribute before executing the content script. Also handles `openBackgroundTab` requests from content scripts. Listens for `chrome.commands.onCommand` to trigger tools via keyboard shortcuts (Jump to Latest, Jump to Latest Quick).
+- **Dependencies:** Action Registry, `chrome.storage.local`, `chrome.commands`
 - **Dependents:** Popup (indirectly via message passing), Ribbon Toolbar (via message passing), Lookups Opener (via `openBackgroundTab` message)
 
 ### Popup (`src/popup/`)
@@ -87,9 +87,14 @@ graph TD
 - **Dependents:** None
 
 ### Jump to Latest (`src/content/jump-to-latest/`)
-- **Purpose:** Dialog panel for picking any entity and opening its most recently modified or created record. Uses OData `$orderby` and `$top=1`. Entity metadata is cached in localStorage with a 7-day TTL.
+- **Purpose:** Dialog panel for picking any entity and opening its most recently modified or created record. Uses OData `$orderby` and `$top=1`. Entity metadata is cached in localStorage with a 7-day TTL. Persists user preferences (sort field, days filter) to localStorage for reuse by the Quick variant.
 - **Dependencies:** Panel Shell, Shared Utilities
-- **Dependents:** Prefetch Entities (shares the same cache key)
+- **Dependents:** Prefetch Entities (shares the same cache key), Jump to Latest Quick (reads persisted preferences)
+
+### Jump to Latest Quick (`src/content/jump-to-latest/jump-to-latest-quick.ts`)
+- **Purpose:** Headless (no UI) variant of Jump to Latest, triggered via keyboard shortcut (Alt+Shift+O). Reads the last-used entity, sort field, and days filter from localStorage, queries OData directly, and opens the result in a new tab. Shows a toast if no previous search exists.
+- **Dependencies:** Shared Utilities
+- **Dependents:** None
 
 ### Override Readonly (`src/content/override-readonly/`)
 - **Purpose:** Toggle script that registers a modifier+click handler on the document. When active, clicking a readonly field with the configured modifier key (default: Alt) unlocks it via `setDisabled(false)`. Shortcut configuration is read from cross-frame state (written by background worker from `chrome.storage.local`).

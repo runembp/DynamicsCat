@@ -48,6 +48,7 @@ DynamicsCat/
 │       │   └── open-on-api.ts           ← Open current record as Web API JSON
 │       ├── jump-to-latest/
 │       │   ├── jump-to-latest.ts        ← Entity picker dialog, opens newest record
+│       │   ├── jump-to-latest-quick.ts  ← Headless quick-open via keyboard shortcut
 │       │   └── jump-to-latest.css       ← Dialog-scoped styles
 │       ├── activate-activity/
 │       │   └── activate-activity.ts     ← PATCH statecode to reactivate closed activities
@@ -107,8 +108,8 @@ DynamicsCat/
 - **Key files:** `open-on-api.ts`.
 
 ### `src/content/jump-to-latest/`
-- **Responsibility:** Dialog panel with entity picker and sort options. Queries OData for the most recently modified/created record and opens it.
-- **Key files:** `jump-to-latest.ts` (entity search with datalist, localStorage cache, OData query), `jump-to-latest.css`.
+- **Responsibility:** Dialog panel with entity picker and sort options. Queries OData for the most recently modified/created record and opens it. Persists sort field and days filter to localStorage.
+- **Key files:** `jump-to-latest.ts` (entity search with datalist, localStorage cache, OData query), `jump-to-latest-quick.ts` (headless quick-open via keyboard shortcut), `jump-to-latest.css`.
 
 ### `src/content/activate-activity/`
 - **Responsibility:** Reactivates a closed CRM activity by PATCHing statecode and statuscode via the Web API.

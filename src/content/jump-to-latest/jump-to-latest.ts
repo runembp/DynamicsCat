@@ -6,6 +6,8 @@ const STYLE_ID   = 'crm-tools-newest-modified-style';
 const LIST_ID    = 'crm-tools-newest-modified-list';
 const CACHE_KEY       = '__dynamicscat_entity_cache';
 const LAST_ENTITY_KEY = '__dynamicscat_last_entity';
+const LAST_SORT_KEY = '__dynamicscat_last_sort';
+const LAST_WITHIN_DAYS_KEY = '__dynamicscat_last_within_days';
 const TTL_MS          = 7 * 24 * 60 * 60 * 1000; // 7 days
 const GUID_RE    = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -162,6 +164,12 @@ async function main(): Promise<void> {
   sortLabel.textContent = 'Sort by';
 
   const sortBtns: HTMLButtonElement[] = [];
+  const updateSortButtonStates = (): void => {
+    sortBtns.forEach((btn, index) => {
+      const field = index === 0 ? 'modifiedon' : 'createdon';
+      btn.classList.toggle('cnm-sort-active', field === sortField);
+    });
+  };
   const makeSortBtn = (text: string, field: typeof sortField) => {
     const btn = document.createElement('button');
     btn.className = 'cnm-sort-btn' + (field === sortField ? ' cnm-sort-active' : '');
@@ -170,8 +178,7 @@ async function main(): Promise<void> {
     btn.addEventListener('click', () => {
       if (btn.disabled) return;
       sortField = field;
-      sortBtns.forEach(b => b.classList.remove('cnm-sort-active'));
-      btn.classList.add('cnm-sort-active');
+      updateSortButtonStates();
     });
     return btn;
   };
@@ -245,6 +252,13 @@ async function main(): Promise<void> {
     openBtn.disabled = false;
     const lastEntity = localStorage.getItem(LAST_ENTITY_KEY);
     if (lastEntity) input.value = lastEntity;
+    const lastSort = localStorage.getItem(LAST_SORT_KEY);
+    if (lastSort === 'modifiedon' || lastSort === 'createdon') {
+      sortField = lastSort;
+      updateSortButtonStates();
+    }
+    const lastWithinDays = localStorage.getItem(LAST_WITHIN_DAYS_KEY);
+    if (lastWithinDays !== null) withinInput.value = lastWithinDays;
     input.focus();
   } else {
     input.placeholder = 'Failed to load entities';
@@ -285,6 +299,8 @@ async function main(): Promise<void> {
     }
 
     localStorage.setItem(LAST_ENTITY_KEY, input.value.trim());
+    localStorage.setItem(LAST_SORT_KEY, sortField);
+    localStorage.setItem(LAST_WITHIN_DAYS_KEY, withinInput.value);
 
     const guidValue = guidInput.value.trim();
     if (GUID_RE.test(guidValue)) {

@@ -17,6 +17,7 @@ const options = {
     'content/lookups-opener': 'src/content/lookups-opener/lookups-opener.ts',
     'content/open-on-api':  'src/content/open-on-api/open-on-api.ts',
     'content/jump-to-latest': 'src/content/jump-to-latest/jump-to-latest.ts',
+    'content/jump-to-latest-quick': 'src/content/jump-to-latest/jump-to-latest-quick.ts',
     'content/activate-activity': 'src/content/activate-activity/activate-activity.ts',
     'content/prefetch-entities': 'src/content/prefetch-entities/prefetch-entities.ts',
     'content/ribbon-toolbar': 'src/ribbon/ribbon-toolbar/ribbon-toolbar.ts',

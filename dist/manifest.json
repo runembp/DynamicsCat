@@ -24,6 +24,16 @@
       "128": "icons/icon128.png"
     }
   },
+  "commands": {
+    "jump-to-latest": {
+      "suggested_key": { "default": "Alt+O" },
+      "description": "Toggle Jump to Latest panel"
+    },
+    "jump-to-latest-quick": {
+      "suggested_key": { "default": "Alt+Shift+O" },
+      "description": "Repeat last Jump to Latest search"
+    }
+  },
   "web_accessible_resources": [
     {
       "resources": ["icons/*"],

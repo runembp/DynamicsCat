@@ -119,3 +119,20 @@ chrome.runtime.onInstalled.addListener((details) => {
     lookupsOpenerShortcut: DEFAULT_LOOKUPS_OPENER_SHORTCUT,
   });
 });
+
+chrome.commands.onCommand.addListener((command) => {
+  chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+    if (!tab?.id) return;
+    const actionName = command === 'jump-to-latest' ? 'jumpToLatest'
+      : command === 'jump-to-latest-quick' ? 'jumpToLatestQuick'
+      : null;
+    if (!actionName) return;
+    const config = ACTION_MAP[actionName];
+    if (!config) return;
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id, allFrames: config.allFrames },
+      files: [config.file],
+      world: 'MAIN',
+    });
+  });
+});

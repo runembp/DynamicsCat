@@ -28,7 +28,7 @@ The popup (`src/popup/popup.ts`) renders tool buttons and dispatches actions to 
 
 Content scripts live in `src/content/`. They run inside the page and have access to the `Xrm` global exposed by Dynamics CRM. Because CRM forms render inside **iframes**, content scripts that need `Xrm` must be injected with `allFrames: true` and `world: 'MAIN'` (the ISOLATED world cannot see `Xrm`).
 
-`src/background.ts` is the service worker that handles all message-based script injection, the `probeActivatable` conditional visibility check, shortcut configuration injection, and `openBackgroundTab` requests from content scripts.
+`src/background.ts` is the service worker that handles all message-based script injection, the `probeActivatable` conditional visibility check, shortcut configuration injection, `openBackgroundTab` requests from content scripts, and `chrome.commands.onCommand` keyboard shortcut dispatching.
 
 ## Build System
 
