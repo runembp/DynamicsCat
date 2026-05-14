@@ -1,6 +1,6 @@
 # DynamicsCat
 
-A Chrome Extension (Manifest V3) for Dynamics CRM 2016 — developer tools for form field inspection, option set browsing, record manipulation, and a ribbon toolbar that auto-injects on CRM pages.
+A Chrome Extension for Dynamics CRM 2016 — developer tools for form field inspection, option set browsing, record manipulation, and a ribbon toolbar that auto-injects on CRM pages.
 
 As a bonus, brings a bit (a lot) of cuteness.
 
