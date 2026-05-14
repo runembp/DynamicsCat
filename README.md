@@ -11,7 +11,7 @@ The `dist/` folder is included in the repo — no Node.js needed.
 3. Enable **Developer mode** (toggle in the top-right corner)
 4. Click **Load unpacked** and select the `dist/` folder
 
-The extension icon will appear in the toolbar. Pin it for easy access.
+Tools are accessible from the Chrome toolbar icon and from a ribbon toolbar that auto-injects on CRM pages.
 
 ## Features
 
