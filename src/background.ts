@@ -111,13 +111,26 @@ chrome.runtime.onMessage.addListener(
 );
 
 chrome.runtime.onInstalled.addListener((details) => {
-  if (details.reason !== 'install') return;
-  chrome.storage.local.set({
-    readonlyOverride: true,
-    readonlyShortcut: DEFAULT_READONLY_SHORTCUT,
-    lookupsOpenerOverride: true,
-    lookupsOpenerShortcut: DEFAULT_LOOKUPS_OPENER_SHORTCUT,
-  });
+  if (details.reason === 'install') {
+    chrome.storage.local.set({
+      readonlyOverride: true,
+      readonlyShortcut: DEFAULT_READONLY_SHORTCUT,
+      lookupsOpenerOverride: true,
+      lookupsOpenerShortcut: DEFAULT_LOOKUPS_OPENER_SHORTCUT,
+    });
+  } else if (details.reason === 'update') {
+    chrome.storage.local.get(
+      ['readonlyOverride', 'lookupsOpenerOverride', 'readonlyShortcut', 'lookupsOpenerShortcut'],
+      (result) => {
+        const defaults: Record<string, unknown> = {};
+        if (result.readonlyOverride === undefined) defaults.readonlyOverride = true;
+        if (result.lookupsOpenerOverride === undefined) defaults.lookupsOpenerOverride = true;
+        if (result.readonlyShortcut === undefined) defaults.readonlyShortcut = DEFAULT_READONLY_SHORTCUT;
+        if (result.lookupsOpenerShortcut === undefined) defaults.lookupsOpenerShortcut = DEFAULT_LOOKUPS_OPENER_SHORTCUT;
+        if (Object.keys(defaults).length > 0) chrome.storage.local.set(defaults);
+      },
+    );
+  }
 });
 
 chrome.commands.onCommand.addListener((command) => {
