@@ -13,6 +13,8 @@ export const STATE_KEYS = {
   lookupsOpenerSilentInject: 'dynamicsCatLookupsOpenerSilentInject',
   lookupsOpenerShortcut: 'dynamicsCatLookupsOpenerShortcut',
   revealedNames: 'dynamicsCatRevealedNames',
+  unlockAllActive: 'dynamicsCatUnlockAllActive',
+  unlockedNames: 'dynamicsCatUnlockedNames',
   toggleLock: 'dynamicsCatToggleLock',
   activatable: 'dynamicsCatActivatable',
 } as const;

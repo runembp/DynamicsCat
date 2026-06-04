@@ -31,44 +31,6 @@
         <span class="btn-icon">✏️</span>
         <span class="btn-label">Dirty Fields</span>
       </button>
-      <div class="tool-with-settings">
-        <div class="tool-inline-row">
-          <button id="btn-override-readonly" class="tool-btn">
-            <span class="btn-icon">🔓</span>
-            <span class="btn-label">Override Readonly</span>
-          </button>
-          <button id="btn-readonly-settings" class="settings-gear" title="Shortcut settings" aria-label="Shortcut settings">⚙️</button>
-        </div>
-        <div id="readonly-settings-panel" class="settings-panel" hidden>
-          <label for="readonly-shortcut-select">Shortcut:</label>
-          <select id="readonly-shortcut-select" class="settings-select">
-            <option value="alt+shift">Alt+Shift+Click</option>
-            <option value="alt">Alt+Click</option>
-            <option value="shift">Shift+Click</option>
-            <option value="ctrl">Ctrl+Click</option>
-            <option value="ctrl+shift">Ctrl+Shift+Click</option>
-          </select>
-        </div>
-      </div>
-      <div class="tool-with-settings">
-        <div class="tool-inline-row">
-          <button id="btn-lookups-opener" class="tool-btn">
-            <span class="btn-icon">🪟</span>
-            <span class="btn-label">Lookups Opener</span>
-          </button>
-          <button id="btn-lookups-opener-settings" class="settings-gear" title="Shortcut settings" aria-label="Shortcut settings">⚙️</button>
-        </div>
-        <div id="lookups-opener-settings-panel" class="settings-panel" hidden>
-          <label for="lookups-opener-shortcut-select">Shortcut:</label>
-          <select id="lookups-opener-shortcut-select" class="settings-select">
-            <option value="alt+shift">Alt+Shift+Click</option>
-            <option value="alt">Alt+Click</option>
-            <option value="shift">Shift+Click</option>
-            <option value="ctrl">Ctrl+Click</option>
-            <option value="ctrl+shift">Ctrl+Shift+Click</option>
-          </select>
-        </div>
-      </div>
     </section>
     <section class="tool-group tool-group-right">
       <h2 class="tool-group-label">🌐 API</h2>
@@ -83,6 +45,10 @@
       <button id="btn-activate-activity" class="tool-btn tool-btn-compact conditional-btn" hidden>
         <span class="btn-icon">🔓</span>
         <span class="btn-label">Activate</span>
+      </button>
+      <button id="btn-shortcuts-help" class="tool-btn tool-btn-compact">
+        <span class="btn-icon">⌨️</span>
+        <span class="btn-label">Shortcuts</span>
       </button>
     </section>
   </main>

@@ -32,6 +32,14 @@
     "jump-to-latest-quick": {
       "suggested_key": { "default": "Alt+Shift+O" },
       "description": "Repeat last Jump to Latest search"
+    },
+    "show-hidden-fields": {
+      "suggested_key": { "default": "Alt+A" },
+      "description": "Toggle visibility of hidden form fields"
+    },
+    "unlock-all-fields": {
+      "suggested_key": { "default": "Alt+U" },
+      "description": "Toggle unlocking of all locked form fields"
     }
   },
   "web_accessible_resources": [

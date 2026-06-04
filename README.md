@@ -25,10 +25,12 @@ Tools are accessible from the Chrome toolbar icon and from a ribbon toolbar that
 - **Show Hidden Fields** — Toggle visibility of fields hidden by form rules
 - **Dirty Fields** — Live-track modified fields with visual highlights
 - **Override Readonly** — Modifier+click to unlock readonly fields (configurable shortcut, default: Alt+Click)
+- **Unlock All Fields** — Toggle to unlock every locked field on the form at once, and re-lock them again
 - **Lookups Opener** — Modifier+click to open lookup references in a background tab (configurable shortcut, default: Ctrl+Click)
 - **Open on API** — Open the current record as raw JSON in the Web API
 - **Jump to Latest** — Pick any entity and open its most recently modified or created record
 - **Activate Activity** — Reactivate a closed activity (conditionally shown when statecode ≠ 0)
+- **Shortcuts** — Panel listing all keyboard/mouse shortcuts, reflecting your configured click-shortcuts
 - **Ribbon Toolbar** — Floating toolbar auto-injected in the CRM nav bar, mirroring all popup tools
 
 ## Keyboard Shortcuts
@@ -41,6 +43,8 @@ Registered via the Chrome `commands` API. Customizable at `chrome://extensions/s
 |----------|--------|-------------|
 | **Alt+O** | Jump to Latest | Toggle the Jump to Latest panel |
 | **Alt+Shift+O** | Jump to Latest (Quick) | Repeat last search — opens the most recent record of the last-used entity directly, without showing the panel |
+| **Alt+A** | Show Hidden Fields | Toggle visibility of fields hidden by form rules |
+| **Alt+U** | Unlock All Fields | Toggle unlocking of all locked form fields |
 
 > **Note:** Jump to Latest (Quick) requires a previous panel search to know which entity and settings to use. If no previous search exists, a toast will prompt you to use Alt+O first.
 

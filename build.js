@@ -12,6 +12,8 @@ const options = {
     'content/all-fields': 'src/content/all-fields/all-fields.ts',
     'content/option-sets': 'src/content/option-sets/option-sets.ts',
     'content/show-hidden-fields': 'src/content/show-hidden-fields/show-hidden-fields.ts',
+    'content/shortcuts-help': 'src/content/shortcuts-help/shortcuts-help.ts',
+    'content/unlock-all-fields': 'src/content/unlock-all-fields/unlock-all-fields.ts',
     'content/dirty-fields': 'src/content/dirty-fields/dirty-fields.ts',
     'content/override-readonly': 'src/content/override-readonly/override-readonly.ts',
     'content/lookups-opener': 'src/content/lookups-opener/lookups-opener.ts',

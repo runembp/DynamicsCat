@@ -52,6 +52,10 @@ DynamicsCat/
 │       │   └── jump-to-latest.css       ← Dialog-scoped styles
 │       ├── activate-activity/
 │       │   └── activate-activity.ts     ← PATCH statecode to reactivate closed activities
+│       ├── unlock-all-fields/
+│       │   └── unlock-all-fields.ts     ← Toggle: unlock/re-lock all disabled controls
+│       ├── shortcuts-help/
+│       │   └── shortcuts-help.ts        ← Dialog panel listing DynamicsCat shortcuts
 │       └── prefetch-entities/
 │           └── prefetch-entities.ts     ← Background entity metadata cache warmer
 └── dist/                                ← Build output (loaded as unpacked extension)
@@ -115,6 +119,13 @@ DynamicsCat/
 - **Responsibility:** Reactivates a closed CRM activity by PATCHing statecode and statuscode via the Web API.
 - **Key files:** `activate-activity.ts`.
 
-### `src/content/prefetch-entities/`
-- **Responsibility:** Registered as a manifest content script. Silently fetches and caches entity metadata on every CRM page load so Jump to Latest opens instantly.
+### `src/content/unlock-all-fields/`
+- **Responsibility:** Toggle script that unlocks all disabled controls on the form via `setDisabled(false)` and re-locks them on the next toggle. Tracks affected field names in cross-frame state.
+- **Key files:** `unlock-all-fields.ts`.
+
+### `src/content/shortcuts-help/`
+- **Responsibility:** Renders a dialog panel listing the keyboard/mouse shortcuts DynamicsCat adds. Reflects the user's configured click-shortcuts read from cross-frame state.
+- **Key files:** `shortcuts-help.ts`.
+
+### `src/content/prefetch-entities/`- **Responsibility:** Registered as a manifest content script. Silently fetches and caches entity metadata on every CRM page load so Jump to Latest opens instantly.
 - **Key files:** `prefetch-entities.ts`.

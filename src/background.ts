@@ -113,18 +113,14 @@ chrome.runtime.onMessage.addListener(
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     chrome.storage.local.set({
-      readonlyOverride: true,
       readonlyShortcut: DEFAULT_READONLY_SHORTCUT,
-      lookupsOpenerOverride: true,
       lookupsOpenerShortcut: DEFAULT_LOOKUPS_OPENER_SHORTCUT,
     });
   } else if (details.reason === 'update') {
     chrome.storage.local.get(
-      ['readonlyOverride', 'lookupsOpenerOverride', 'readonlyShortcut', 'lookupsOpenerShortcut'],
+      ['readonlyShortcut', 'lookupsOpenerShortcut'],
       (result) => {
         const defaults: Record<string, unknown> = {};
-        if (result.readonlyOverride === undefined) defaults.readonlyOverride = true;
-        if (result.lookupsOpenerOverride === undefined) defaults.lookupsOpenerOverride = true;
         if (result.readonlyShortcut === undefined) defaults.readonlyShortcut = DEFAULT_READONLY_SHORTCUT;
         if (result.lookupsOpenerShortcut === undefined) defaults.lookupsOpenerShortcut = DEFAULT_LOOKUPS_OPENER_SHORTCUT;
         if (Object.keys(defaults).length > 0) chrome.storage.local.set(defaults);
@@ -138,6 +134,8 @@ chrome.commands.onCommand.addListener((command) => {
     if (!tab?.id) return;
     const actionName = command === 'jump-to-latest' ? 'jumpToLatest'
       : command === 'jump-to-latest-quick' ? 'jumpToLatestQuick'
+      : command === 'show-hidden-fields' ? 'injectShowHiddenFields'
+      : command === 'unlock-all-fields' ? 'injectUnlockAllFields'
       : null;
     if (!actionName) return;
     const config = ACTION_MAP[actionName];

@@ -32,7 +32,7 @@ graph TD
 - **Dependents:** Popup, Background Service Worker, Ribbon Toolbar
 
 ### Background Service Worker (`src/background.ts`)
-- **Purpose:** Listens for messages from popup and ribbon, dispatches content scripts via `chrome.scripting.executeScript`. Handles the `probeActivatable` message for conditional action visibility. For shortcut-based tools (Override Readonly, Lookups Opener), reads shortcut configuration from `chrome.storage.local` and injects it as a dataset attribute before executing the content script. Also handles `openBackgroundTab` requests from content scripts. Listens for `chrome.commands.onCommand` to trigger tools via keyboard shortcuts (Jump to Latest, Jump to Latest Quick).
+- **Purpose:** Listens for messages from popup and ribbon, dispatches content scripts via `chrome.scripting.executeScript`. Handles the `probeActivatable` message for conditional action visibility. For shortcut-based tools (Override Readonly, Lookups Opener), reads shortcut configuration from `chrome.storage.local` and injects it as a dataset attribute before executing the content script. Also handles `openBackgroundTab` requests from content scripts. Listens for `chrome.commands.onCommand` to trigger tools via keyboard shortcuts (Jump to Latest, Jump to Latest Quick, Show Hidden Fields, Unlock All Fields).
 - **Dependencies:** Action Registry, `chrome.storage.local`, `chrome.commands`
 - **Dependents:** Popup (indirectly via message passing), Ribbon Toolbar (via message passing), Lookups Opener (via `openBackgroundTab` message)
 
@@ -49,17 +49,17 @@ graph TD
 ### Panel Shell (`src/content/panel.ts`)
 - **Purpose:** Shared factory for panel chrome — creates the container, header with title and close button, draggable behavior, CSS isolation, search bar, and copy-to-clipboard spans. Feature scripts call `createPanelShell()` and populate the returned `body` element.
 - **Dependencies:** Shared Utilities
-- **Dependents:** All Fields, Option Sets, Jump to Latest
+- **Dependents:** All Fields, Option Sets, Jump to Latest, Shortcuts Help
 
 ### Shared Utilities (`src/content/shared.ts`)
 - **Purpose:** Cross-cutting helpers bundled inline into each content script: `debounce`, `buildLabelMap` (Xrm control labels), `makeDraggable`, `copyToClipboard`, `showToast`.
 - **Dependencies:** None
-- **Dependents:** All Fields, Option Sets, Show Hidden Fields, Dirty Fields, Override Readonly, Lookups Opener, Open on API, Jump to Latest, Activate Activity, Panel Shell
+- **Dependents:** All Fields, Option Sets, Show Hidden Fields, Dirty Fields, Override Readonly, Lookups Opener, Open on API, Jump to Latest, Activate Activity, Unlock All Fields, Panel Shell
 
 ### Cross-Frame State (`src/content/state.ts`)
 - **Purpose:** Toggle state coordination across CRM iframes. Stores flags on the top-frame `document.documentElement.dataset` so multiple frames can detect whether a tool is active. Provides `acquireToggleLock` to prevent duplicate execution when `allFrames: true` injects the same script into multiple frames. Also stores shortcut configuration and active-state flags for Override Readonly and Lookups Opener.
 - **Dependencies:** None
-- **Dependents:** Show Hidden Fields, Dirty Fields, Override Readonly, Lookups Opener, Ribbon Toolbar
+- **Dependents:** Show Hidden Fields, Dirty Fields, Override Readonly, Lookups Opener, Unlock All Fields, Shortcuts Help, Ribbon Toolbar
 
 ### All Fields (`src/content/all-fields/`)
 - **Purpose:** Reads all `Xrm.Page` attributes and renders a sortable, searchable side panel showing label, schema name, type, and value for every field on the form.
@@ -106,9 +106,18 @@ graph TD
 - **Dependencies:** Shared Utilities, Cross-Frame State
 - **Dependents:** None
 
-### Activate Activity (`src/content/activate-activity/`)
-- **Purpose:** Reactivates a closed activity by PATCHing `statecode=0, statuscode=1` via the Web API. Only visible when the current record's statecode is non-zero (conditionally shown via `probeActivatable`).
+### Activate Activity (`src/content/activate-activity/`)- **Purpose:** Reactivates a closed activity by PATCHing `statecode=0, statuscode=1` via the Web API. Only visible when the current record's statecode is non-zero (conditionally shown via `probeActivatable`).
 - **Dependencies:** Shared Utilities
+- **Dependents:** None
+
+### Unlock All Fields (`src/content/unlock-all-fields/`)
+- **Purpose:** Toggle script that unlocks every disabled control on the form via `setDisabled(false)`, recording the affected field names in cross-frame state. Toggling again re-locks exactly those fields. Triggered from the popup/ribbon or the Alt+U keyboard shortcut.
+- **Dependencies:** Shared Utilities, Cross-Frame State
+- **Dependents:** None
+
+### Shortcuts Help (`src/content/shortcuts-help/`)
+- **Purpose:** Dialog panel listing the keyboard/mouse shortcuts DynamicsCat adds to CRM forms. The two configurable click-shortcuts (Unlock field, Open lookup field) are read from cross-frame state so the panel reflects the user's current configuration; the rest are fixed. Injected into the top frame only.
+- **Dependencies:** Panel Shell, Cross-Frame State
 - **Dependents:** None
 
 ### Prefetch Entities (`src/content/prefetch-entities/`)
