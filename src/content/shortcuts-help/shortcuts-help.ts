@@ -58,6 +58,8 @@ function main(): void {
     { keys: clickShortcutKeys(lookupsShortcut), action: 'Open lookup field' },
     { keys: ['Alt', 'A'], action: 'Show all hidden fields' },
     { keys: ['Alt', 'U'], action: 'Unlock all fields' },
+    { keys: ['Alt', 'O'], action: 'Toggle Jump to Latest panel' },
+    { keys: ['Alt', 'Shift', 'O'], action: 'Repeat last Jump to Latest search' },
   ];
 
   const table = document.createElement('table');

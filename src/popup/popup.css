@@ -53,6 +53,12 @@ main.two-col {
 
 .tool-group-right {
   border-left: 1px solid #e8eaed;
+  display: flex;
+  flex-direction: column;
+}
+
+#btn-shortcuts-help {
+  margin-top: auto;
 }
 
 .tool-group-label {

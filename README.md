@@ -30,7 +30,7 @@ Tools are accessible from the Chrome toolbar icon and from a ribbon toolbar that
 - **Open on API** — Open the current record as raw JSON in the Web API
 - **Jump to Latest** — Pick any entity and open its most recently modified or created record
 - **Activate Activity** — Reactivate a closed activity (conditionally shown when statecode ≠ 0)
-- **Shortcuts** — Panel listing all keyboard/mouse shortcuts, reflecting your configured click-shortcuts
+- **Shortcuts** — Panel listing all keyboard/mouse shortcuts (including Jump to Latest, Quick, Show Hidden Fields and Unlock All Fields), reflecting your configured click-shortcuts
 - **Ribbon Toolbar** — Floating toolbar auto-injected in the CRM nav bar, mirroring all popup tools
 
 ## Keyboard Shortcuts
