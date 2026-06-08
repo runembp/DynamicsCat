@@ -9,12 +9,14 @@ import { showToast } from '../shared';
 import { acquireToggleLock, readFlag, writeFlag, clearFlag, readJsonArray, writeJsonArray } from '../state';
 
 // Stored entries are tagged so the toggle-back / re-reveal passes can target the
-// right container:  't|<tab>', 's|<tab>|<section>', 'c|<control>'.
+// right container:  't|<tab>', 's|<tab>|<section>', 'c|<control>', 'd|<tab>'.
+// 'd' = a collapsed tab we expanded (display state), restored on toggle-back.
 const SEP = '|';
 
 function tabEntry(tab: string): string { return `t${SEP}${tab}`; }
 function sectionEntry(tab: string, section: string): string { return `s${SEP}${tab}${SEP}${section}`; }
 function controlEntry(control: string): string { return `c${SEP}${control}`; }
+function displayEntry(tab: string): string { return `d${SEP}${tab}`; }
 
 function setEntryVisible(entry: string, visible: boolean): boolean {
   const parts = entry.split(SEP);
@@ -34,6 +36,12 @@ function setEntryVisible(entry: string, visible: boolean): boolean {
       case 'c': {
         const ctrl = Xrm.Page.ui.controls.get(parts[1]) as Xrm.Controls.StandardControl | null;
         if (ctrl && ctrl.setVisible) { ctrl.setVisible(visible); return true; }
+        return false;
+      }
+      case 'd': {
+        // visible=true → expand (reveal pass); visible=false → collapse (toggle-back)
+        const tab = Xrm.Page.ui.tabs.get(parts[1]);
+        if (tab && tab.setDisplayState) { tab.setDisplayState(visible ? 'expanded' : 'collapsed'); return true; }
         return false;
       }
       default:
@@ -86,6 +94,13 @@ function main(): void {
       if (tab.getVisible && tab.getVisible() === false) {
         tab.setVisible(true);
         revealed.push(tabEntry(tab.getName()));
+      }
+    } catch { /* ignore */ }
+
+    try {
+      if (tab.getDisplayState && tab.getDisplayState() === 'collapsed') {
+        tab.setDisplayState('expanded');
+        revealed.push(displayEntry(tab.getName()));
       }
     } catch { /* ignore */ }
 
