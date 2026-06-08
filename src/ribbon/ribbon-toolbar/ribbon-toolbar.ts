@@ -150,11 +150,10 @@ function buildToolbar(): void {
   const colRight = document.createElement('div');
   colRight.style.cssText = 'border-left: 1px solid #e8eaed;';
 
-  // Actions are split into two columns: first 4 left, rest right
+  // Actions are split into two columns: first 3 left, rest right
   const LEFT_ACTIONS = new Set([
     'injectAllFields',
     'injectOptionSets',
-    'injectShowHiddenFields',
     'injectDirtyFields',
   ]);
 
@@ -172,7 +171,7 @@ function buildToolbar(): void {
       btn.style.display = 'none';
       (conditionalButtons[def.conditional] ??= []).push(btn);
     }
-    if (def.action === 'injectShowHiddenFields' || def.action === 'injectDirtyFields') {
+    if (def.action === 'injectDirtyFields') {
       activeButtons[def.action] = btn;
     }
 
@@ -198,9 +197,7 @@ function buildToolbar(): void {
       dropdown.style.left = rect.left + 'px';
       // Reflect toggle state written by MAIN-world content scripts via dataset
       const ds = getSharedDataset();
-      const hiddenBtn = activeButtons['injectShowHiddenFields'];
       const dirtyBtn = activeButtons['injectDirtyFields'];
-      if (hiddenBtn) setButtonActive(hiddenBtn, ds[STATE_KEYS.hiddenActive] === '1');
       if (dirtyBtn) setButtonActive(dirtyBtn, ds[STATE_KEYS.dirtyActive] === '1');
       dropdown.style.display = 'grid';
     }

@@ -15,7 +15,8 @@ export interface ActionDef {
 export const ACTIONS: ActionDef[] = [
   { action: 'injectAllFields',        file: 'content/all-fields.js',          label: 'All Fields',     icon: '📋', popupBtnId: 'btn-all-fields' },
   { action: 'injectOptionSets',       file: 'content/option-sets.js',         label: 'Option Sets',    icon: '🔘', popupBtnId: 'btn-show-option-sets' },
-  { action: 'injectShowHiddenFields', file: 'content/show-hidden-fields.js',  label: 'Hidden Fields',  icon: '👁', popupBtnId: 'btn-show-hidden-fields' },
+  // Keyboard-shortcut only (no button) — superseded by the Show Hidden Fields shortcut.
+  { action: 'injectShowHiddenFields', file: 'content/show-hidden-fields.js',  label: 'Hidden Fields' },
   { action: 'injectDirtyFields',      file: 'content/dirty-fields.js',        label: 'Dirty Fields',   icon: '✏️', popupBtnId: 'btn-dirty-fields' },
   { action: 'injectOverrideReadonly', file: 'content/override-readonly.js',   label: 'Override Readonly', icon: '🔓' },
   { action: 'injectLookupsOpener',    file: 'content/lookups-opener.js',      label: 'Lookups Opener', icon: '🪟' },
