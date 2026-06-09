@@ -1,4 +1,4 @@
-import { showToast } from '../shared';
+import { showToast, copyToClipboard } from '../shared';
 import { readFlag, writeFlag, clearFlag } from '../state';
 
 declare global {
@@ -81,6 +81,19 @@ function main(): void {
     return result;
   }
 
+  function findLabelAtTarget(target: HTMLElement): { name: string; type: string } | null {
+    let result: { name: string; type: string } | null = null;
+    Xrm.Page.ui.controls.forEach((ctrl) => {
+      if (result) return;
+      const name = ctrl.getName();
+      if (!name) return;
+      const labelCell = document.getElementById(`${name}_c`);
+      if (!labelCell || !labelCell.contains(target)) return;
+      result = { name, type: ctrl.getControlType() };
+    });
+    return result;
+  }
+
   // Open on pointerdown (first event in the chain, always fires)
   const openHandler = (e: Event): void => {
     const pe = e as PointerEvent;
@@ -91,13 +104,24 @@ function main(): void {
     if (!target) return;
 
     const match = isInsideLookupWithValue(target);
-    if (!match) return;
+    if (match) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      const url = `${window.location.origin}/main.aspx?etn=${encodeURIComponent(match.record.entityType!)}&id=${encodeURIComponent(match.record.id!)}&pagetype=entityrecord`;
+      (window.top ?? window).postMessage({ type: 'dynamicscat-open-background-tab', url }, '*');
+      return;
+    }
+
+    // Not a lookup with a value — if a field label was clicked, copy its logical name
+    const field = findLabelAtTarget(target);
+    if (!field) return;
 
     e.preventDefault();
     e.stopImmediatePropagation();
 
-    const url = `${window.location.origin}/main.aspx?etn=${encodeURIComponent(match.record.entityType!)}&id=${encodeURIComponent(match.record.id!)}&pagetype=entityrecord`;
-    (window.top ?? window).postMessage({ type: 'dynamicscat-open-background-tab', url }, '*');
+    copyToClipboard(field.name);
+    showToast(`📋 ${field.name}`);
   };
 
   // Suppress subsequent events to prevent CRM from also reacting
@@ -107,6 +131,11 @@ function main(): void {
     const target = me.target as HTMLElement | null;
     if (!target) return;
     if (isInsideLookupWithValue(target)) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+    if (findLabelAtTarget(target)) {
       e.preventDefault();
       e.stopImmediatePropagation();
     }
