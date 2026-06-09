@@ -32,9 +32,9 @@ graph TD
 - **Dependents:** Popup, Background Service Worker, Ribbon Toolbar
 
 ### Background Service Worker (`src/background.ts`)
-- **Purpose:** Listens for messages from popup and ribbon, dispatches content scripts via `chrome.scripting.executeScript`. Handles the `probeActivatable` message for conditional action visibility. For shortcut-based tools (Override Readonly, Lookups Opener), reads shortcut configuration from `chrome.storage.local` and injects it as a dataset attribute before executing the content script. Also handles `openBackgroundTab` requests from content scripts. Listens for `chrome.commands.onCommand` to trigger tools via keyboard shortcuts (Jump to Latest, Jump to Latest Quick, Show Hidden Fields, Unlock All Fields).
+- **Purpose:** Listens for messages from popup and ribbon, dispatches content scripts via `chrome.scripting.executeScript`. Handles the `probeActivatable` message for conditional action visibility. For shortcut-based tools (Override Readonly, Field Click), reads shortcut configuration from `chrome.storage.local` and injects it as a dataset attribute before executing the content script. Also handles `openBackgroundTab` requests from content scripts. Listens for `chrome.commands.onCommand` to trigger tools via keyboard shortcuts (Jump to Latest, Jump to Latest Quick, Show Hidden Fields, Unlock All Fields).
 - **Dependencies:** Action Registry, `chrome.storage.local`, `chrome.commands`
-- **Dependents:** Popup (indirectly via message passing), Ribbon Toolbar (via message passing), Lookups Opener (via `openBackgroundTab` message)
+- **Dependents:** Popup (indirectly via message passing), Ribbon Toolbar (via message passing), Field Click (via `openBackgroundTab` message)
 
 ### Popup (`src/popup/`)
 - **Purpose:** Browser-action popup UI. Renders buttons from the action registry and sends messages to the background worker to inject content scripts into the active tab.
@@ -54,12 +54,12 @@ graph TD
 ### Shared Utilities (`src/content/shared.ts`)
 - **Purpose:** Cross-cutting helpers bundled inline into each content script: `debounce`, `buildLabelMap` (Xrm control labels), `makeDraggable`, `copyToClipboard`, `showToast`.
 - **Dependencies:** None
-- **Dependents:** All Fields, Option Sets, Show Hidden Fields, Dirty Fields, Override Readonly, Lookups Opener, Open on API, Jump to Latest, Activate Activity, Unlock All Fields, Panel Shell
+- **Dependents:** All Fields, Option Sets, Show Hidden Fields, Dirty Fields, Override Readonly, Field Click, Open on API, Jump to Latest, Activate Activity, Unlock All Fields, Panel Shell
 
 ### Cross-Frame State (`src/content/state.ts`)
-- **Purpose:** Toggle state coordination across CRM iframes. Stores flags on the top-frame `document.documentElement.dataset` so multiple frames can detect whether a tool is active. Provides `acquireToggleLock` to prevent duplicate execution when `allFrames: true` injects the same script into multiple frames. Also stores shortcut configuration and active-state flags for Override Readonly and Lookups Opener.
+- **Purpose:** Toggle state coordination across CRM iframes. Stores flags on the top-frame `document.documentElement.dataset` so multiple frames can detect whether a tool is active. Provides `acquireToggleLock` to prevent duplicate execution when `allFrames: true` injects the same script into multiple frames. Also stores shortcut configuration and active-state flags for Override Readonly and Field Click.
 - **Dependencies:** None
-- **Dependents:** Show Hidden Fields, Dirty Fields, Override Readonly, Lookups Opener, Unlock All Fields, Shortcuts Help, Ribbon Toolbar
+- **Dependents:** Show Hidden Fields, Dirty Fields, Override Readonly, Field Click, Unlock All Fields, Shortcuts Help, Ribbon Toolbar
 
 ### All Fields (`src/content/all-fields/`)
 - **Purpose:** Reads all `Xrm.Page` attributes and renders a sortable, searchable side panel showing label, schema name, type, and value for every field on the form.
@@ -101,8 +101,8 @@ graph TD
 - **Dependencies:** Shared Utilities, Cross-Frame State
 - **Dependents:** None
 
-### Lookups Opener (`src/content/lookups-opener/`)
-- **Purpose:** Toggle script that registers a modifier+click handler. When active, clicking a populated lookup field with the configured modifier key (default: Ctrl) opens the referenced record in a background tab via `postMessage` to the top frame, which the ribbon toolbar relays to the background worker's `openBackgroundTab` handler.
+### Field Click (`src/content/field-click/`)
+- **Purpose:** Toggle script that registers a modifier+click handler. When active, clicking a populated lookup field's value with the configured modifier key (default: Ctrl) opens the referenced record in a background tab via `postMessage` to the top frame, which the ribbon toolbar relays to the background worker's `openBackgroundTab` handler. Clicking a field's label with the modifier key copies that field's logical name to the clipboard and shows a toast.
 - **Dependencies:** Shared Utilities, Cross-Frame State
 - **Dependents:** None
 
@@ -116,7 +116,7 @@ graph TD
 - **Dependents:** None
 
 ### Shortcuts Help (`src/content/shortcuts-help/`)
-- **Purpose:** Dialog panel listing the keyboard/mouse shortcuts DynamicsCat adds to CRM forms. The two configurable click-shortcuts (Unlock field, Open lookup field) are read from cross-frame state so the panel reflects the user's current configuration; the rest are fixed. Injected into the top frame only.
+- **Purpose:** Dialog panel listing the keyboard/mouse shortcuts DynamicsCat adds to CRM forms. The configurable click-shortcuts (Unlock field, Open lookup field, Copy field logical name) are read from cross-frame state so the panel reflects the user's current configuration; the rest are fixed. Injected into the top frame only.
 - **Dependencies:** Panel Shell, Cross-Frame State
 - **Dependents:** None
 

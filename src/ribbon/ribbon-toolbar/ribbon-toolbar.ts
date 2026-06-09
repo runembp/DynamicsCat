@@ -284,11 +284,11 @@ if (isCrmPage() && hasNavBar()) {
   startObserver();
   probeConditionalActions();
 
-  // Override Readonly and Lookups Opener are always on — inject silently on load.
+  // Override Readonly and Field Click are always on — inject silently on load.
   writeFlag('readonlySilentInject', '1');
   sendAction('injectOverrideReadonly');
-  writeFlag('lookupsOpenerSilentInject', '1');
-  sendAction('injectLookupsOpener');
+  writeFlag('fieldClickSilentInject', '1');
+  sendAction('injectFieldClick');
 
   // Listen for background-tab-open requests from MAIN world content scripts (via postMessage across frames)
   window.addEventListener('message', (e: MessageEvent) => {

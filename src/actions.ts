@@ -19,7 +19,7 @@ export const ACTIONS: ActionDef[] = [
   { action: 'injectShowHiddenFields', file: 'content/show-hidden-fields.js',  label: 'Hidden Fields' },
   { action: 'injectDirtyFields',      file: 'content/dirty-fields.js',        label: 'Dirty Fields',   icon: '✏️', popupBtnId: 'btn-dirty-fields' },
   { action: 'injectOverrideReadonly', file: 'content/override-readonly.js',   label: 'Override Readonly', icon: '🔓' },
-  { action: 'injectLookupsOpener',    file: 'content/lookups-opener.js',      label: 'Lookups Opener', icon: '🪟' },
+  { action: 'injectFieldClick',       file: 'content/field-click.js',         label: 'Field Click',    icon: '🪟' },
   { action: 'openOnApi',              file: 'content/open-on-api.js',         label: 'Open on API',    icon: '🔗', popupBtnId: 'btn-open-on-api' },
   { action: 'jumpToLatest',            file: 'content/jump-to-latest.js',       label: 'Jump to Latest', icon: '🕐', popupBtnId: 'btn-jump-to-latest', allFrames: false },
   { action: 'jumpToLatestQuick',      file: 'content/jump-to-latest-quick.js', label: 'Jump to Latest (Quick)', icon: '⚡', allFrames: false },

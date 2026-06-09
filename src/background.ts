@@ -4,7 +4,7 @@
 import { ACTION_MAP } from './actions';
 
 const DEFAULT_READONLY_SHORTCUT = 'alt';
-const DEFAULT_LOOKUPS_OPENER_SHORTCUT = 'ctrl';
+const DEFAULT_FIELD_CLICK_SHORTCUT = 'ctrl';
 
 chrome.runtime.onMessage.addListener(
   (message: Record<string, unknown>, sender, sendResponse): boolean | undefined => {
@@ -68,19 +68,19 @@ chrome.runtime.onMessage.addListener(
       return true;
     }
 
-    if (message.action === 'injectLookupsOpener') {
-      const config = ACTION_MAP.injectLookupsOpener;
+    if (message.action === 'injectFieldClick') {
+      const config = ACTION_MAP.injectFieldClick;
       void (async () => {
         try {
-          const result = await chrome.storage.local.get('lookupsOpenerShortcut');
-          const shortcutValue = typeof result.lookupsOpenerShortcut === 'string'
-            ? result.lookupsOpenerShortcut
-            : DEFAULT_LOOKUPS_OPENER_SHORTCUT;
+          const result = await chrome.storage.local.get('fieldClickShortcut');
+          const shortcutValue = typeof result.fieldClickShortcut === 'string'
+            ? result.fieldClickShortcut
+            : DEFAULT_FIELD_CLICK_SHORTCUT;
           await chrome.scripting.executeScript({
             target: { tabId, allFrames: config.allFrames },
             world: 'MAIN',
             func: (shortcut: string) => {
-              document.documentElement.dataset.dynamicsCatLookupsOpenerShortcut = shortcut;
+              document.documentElement.dataset.dynamicsCatFieldClickShortcut = shortcut;
             },
             args: [shortcutValue],
           });
@@ -114,16 +114,24 @@ chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     chrome.storage.local.set({
       readonlyShortcut: DEFAULT_READONLY_SHORTCUT,
-      lookupsOpenerShortcut: DEFAULT_LOOKUPS_OPENER_SHORTCUT,
+      fieldClickShortcut: DEFAULT_FIELD_CLICK_SHORTCUT,
     });
   } else if (details.reason === 'update') {
     chrome.storage.local.get(
-      ['readonlyShortcut', 'lookupsOpenerShortcut'],
+      ['readonlyShortcut', 'fieldClickShortcut', 'lookupsOpenerShortcut'],
       (result) => {
         const defaults: Record<string, unknown> = {};
         if (result.readonlyShortcut === undefined) defaults.readonlyShortcut = DEFAULT_READONLY_SHORTCUT;
-        if (result.lookupsOpenerShortcut === undefined) defaults.lookupsOpenerShortcut = DEFAULT_LOOKUPS_OPENER_SHORTCUT;
+        if (result.fieldClickShortcut === undefined) {
+          // Migrate from the previous "lookupsOpenerShortcut" key, falling back to the default.
+          defaults.fieldClickShortcut = typeof result.lookupsOpenerShortcut === 'string'
+            ? result.lookupsOpenerShortcut
+            : DEFAULT_FIELD_CLICK_SHORTCUT;
+        }
         if (Object.keys(defaults).length > 0) chrome.storage.local.set(defaults);
+        if (result.lookupsOpenerShortcut !== undefined) {
+          chrome.storage.local.remove('lookupsOpenerShortcut');
+        }
       },
     );
   }

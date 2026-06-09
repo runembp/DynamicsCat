@@ -26,7 +26,7 @@ Tools are accessible from the Chrome toolbar icon and from a ribbon toolbar that
 - **Dirty Fields** — Live-track modified fields with visual highlights
 - **Override Readonly** — Modifier+click to unlock readonly fields (configurable shortcut, default: Alt+Click)
 - **Unlock All Fields** — Toggle to unlock every locked field on the form at once, and re-lock them again
-- **Lookups Opener** — Modifier+click to open lookup references in a background tab (configurable shortcut, default: Ctrl+Click)
+- **Field Click** — Modifier+click on a populated lookup to open its reference in a background tab, or modifier+click on a field label to copy the field's logical name to the clipboard (configurable shortcut, default: Ctrl+Click)
 - **Open on API** — Open the current record as raw JSON in the Web API
 - **Jump to Latest** — Pick any entity and open its most recently modified or created record
 - **Activate Activity** — Reactivate a closed activity (conditionally shown when statecode ≠ 0)
@@ -55,7 +55,8 @@ These shortcuts are active after enabling the tool via the popup or ribbon toolb
 | Shortcut | Action | Description |
 |----------|--------|-------------|
 | **Alt+Click** | Override Readonly | Click a readonly field while holding Alt to unlock it (configurable in popup settings) |
-| **Ctrl+Click** | Lookups Opener | Click a populated lookup field while holding Ctrl to open the referenced record in a background tab (configurable in popup settings) |
+| **Ctrl+Click** | Field Click (lookup) | Click a populated lookup field while holding Ctrl to open the referenced record in a background tab (configurable in popup settings) |
+| **Ctrl+Click** | Field Click (label) | Click a field's label while holding Ctrl to copy its logical name to the clipboard (configurable in popup settings) |
 
 > Both modifier shortcuts are configurable — click the ⚙️ gear icon next to the tool in the popup to choose between Alt, Ctrl, Shift, or combinations.
 

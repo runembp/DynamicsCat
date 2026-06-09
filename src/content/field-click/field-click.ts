@@ -3,8 +3,8 @@ import { readFlag, writeFlag, clearFlag } from '../state';
 
 declare global {
   interface Window {
-    __dynamicsCatLookupsOpener?: boolean;
-    __dynamicsCatLookupsHandlers?: Array<{ event: string; fn: (e: Event) => void }>;
+    __dynamicsCatFieldClick?: boolean;
+    __dynamicsCatFieldClickHandlers?: Array<{ event: string; fn: (e: Event) => void }>;
   }
 }
 
@@ -42,20 +42,20 @@ function shortcutLabel(shortcut: string): string {
 
 function main(): void {
   if (typeof Xrm === 'undefined' || !Xrm.Page || !Xrm.Page.ui) return;
-  const shortcut = readFlag('lookupsOpenerShortcut') || 'ctrl';
+  const shortcut = readFlag('fieldClickShortcut') || 'ctrl';
   const shortcutConfig = parseShortcut(shortcut);
   const shortcutText = shortcutLabel(shortcut);
 
-  if (window.__dynamicsCatLookupsOpener) {
-    if (window.__dynamicsCatLookupsHandlers) {
-      for (const h of window.__dynamicsCatLookupsHandlers) {
+  if (window.__dynamicsCatFieldClick) {
+    if (window.__dynamicsCatFieldClickHandlers) {
+      for (const h of window.__dynamicsCatFieldClickHandlers) {
         document.removeEventListener(h.event, h.fn, true);
       }
     }
-    window.__dynamicsCatLookupsHandlers = undefined;
-    window.__dynamicsCatLookupsOpener = false;
-    writeFlag('lookupsOpenerActive', '0');
-    showToast('🔴 Lookups Opener disabled');
+    window.__dynamicsCatFieldClickHandlers = undefined;
+    window.__dynamicsCatFieldClick = false;
+    writeFlag('fieldClickActive', '0');
+    showToast('🔴 Field Click disabled');
     return;
   }
 
@@ -81,15 +81,15 @@ function main(): void {
     return result;
   }
 
-  function findLabelAtTarget(target: HTMLElement): { name: string; type: string } | null {
-    let result: { name: string; type: string } | null = null;
+  function findLabelAtTarget(target: HTMLElement): string | null {
+    let result: string | null = null;
     Xrm.Page.ui.controls.forEach((ctrl) => {
       if (result) return;
       const name = ctrl.getName();
       if (!name) return;
       const labelCell = document.getElementById(`${name}_c`);
       if (!labelCell || !labelCell.contains(target)) return;
-      result = { name, type: ctrl.getControlType() };
+      result = name;
     });
     return result;
   }
@@ -114,14 +114,14 @@ function main(): void {
     }
 
     // Not a lookup with a value — if a field label was clicked, copy its logical name
-    const field = findLabelAtTarget(target);
-    if (!field) return;
+    const fieldName = findLabelAtTarget(target);
+    if (!fieldName) return;
 
     e.preventDefault();
     e.stopImmediatePropagation();
 
-    copyToClipboard(field.name);
-    showToast(`📋 ${field.name}`);
+    copyToClipboard(fieldName);
+    showToast(`📋 ${fieldName}`);
   };
 
   // Suppress subsequent events to prevent CRM from also reacting
@@ -152,14 +152,14 @@ function main(): void {
     document.addEventListener(h.event, h.fn, true);
   }
 
-  window.__dynamicsCatLookupsHandlers = handlers;
-  window.__dynamicsCatLookupsOpener = true;
-  writeFlag('lookupsOpenerActive', '1');
+  window.__dynamicsCatFieldClickHandlers = handlers;
+  window.__dynamicsCatFieldClick = true;
+  writeFlag('fieldClickActive', '1');
 
-  const silent = readFlag('lookupsOpenerSilentInject') === '1';
-  clearFlag('lookupsOpenerSilentInject');
+  const silent = readFlag('fieldClickSilentInject') === '1';
+  clearFlag('fieldClickSilentInject');
   if (!silent) {
-    showToast(`🟢 Lookups Opener enabled — ${shortcutText} to open linked records`);
+    showToast(`🟢 Field Click enabled — ${shortcutText} a lookup to open it, or a label to copy its logical name`);
   }
 }
 

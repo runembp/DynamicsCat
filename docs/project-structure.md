@@ -42,8 +42,8 @@ DynamicsCat/
 │       │   └── dirty-fields.css         ← (unused — styles are inline via dynamic <style>)
 │       ├── override-readonly/
 │       │   └── override-readonly.ts     ← Modifier+click to unlock readonly fields
-│       ├── lookups-opener/
-│       │   └── lookups-opener.ts        ← Modifier+click to open lookup records in background tab
+│       ├── field-click/
+│       │   └── field-click.ts            ← Modifier+click a lookup to open it, or a label to copy its logical name
 │       ├── open-on-api/
 │       │   └── open-on-api.ts           ← Open current record as Web API JSON
 │       ├── jump-to-latest/
@@ -103,9 +103,9 @@ DynamicsCat/
 - **Responsibility:** Toggle script that registers a configurable modifier+click handler to unlock readonly fields via `setDisabled(false)`. Reads shortcut config from cross-frame state.
 - **Key files:** `override-readonly.ts`.
 
-### `src/content/lookups-opener/`
-- **Responsibility:** Toggle script that registers a configurable modifier+click handler to open populated lookup field references in a background tab. Uses `postMessage` to relay the open request to the background worker via the ribbon toolbar's message listener.
-- **Key files:** `lookups-opener.ts`.
+### `src/content/field-click/`
+- **Responsibility:** Toggle script that registers a configurable modifier+click handler. Clicking a populated lookup field's value opens the referenced record in a background tab (via `postMessage` relayed to the background worker by the ribbon toolbar's message listener). Clicking a field's label copies that field's logical name to the clipboard and shows a toast.
+- **Key files:** `field-click.ts`.
 
 ### `src/content/open-on-api/`
 - **Responsibility:** Opens the current record as raw JSON in a new browser tab using the Dynamics Web API.

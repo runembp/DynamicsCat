@@ -11,7 +11,7 @@ const PANEL_ID = 'crm-tools-shortcuts-panel';
 const STYLE_ID = 'crm-tools-shortcuts-style';
 
 const DEFAULT_READONLY_SHORTCUT = 'alt';
-const DEFAULT_LOOKUPS_OPENER_SHORTCUT = 'ctrl';
+const DEFAULT_FIELD_CLICK_SHORTCUT = 'ctrl';
 
 const EXTRA_CSS = `
 #${PANEL_ID} table { width: 100%; border-collapse: collapse; }
@@ -51,11 +51,12 @@ function main(): void {
   if (!shell) return; // toggled off
 
   const readonlyShortcut = readFlag('readonlyShortcut') || DEFAULT_READONLY_SHORTCUT;
-  const lookupsShortcut = readFlag('lookupsOpenerShortcut') || DEFAULT_LOOKUPS_OPENER_SHORTCUT;
+  const fieldClickShortcut = readFlag('fieldClickShortcut') || DEFAULT_FIELD_CLICK_SHORTCUT;
 
   const rows: ShortcutRow[] = [
     { keys: clickShortcutKeys(readonlyShortcut), action: 'Unlock field' },
-    { keys: clickShortcutKeys(lookupsShortcut), action: 'Open lookup field' },
+    { keys: clickShortcutKeys(fieldClickShortcut), action: 'Open lookup field' },
+    { keys: clickShortcutKeys(fieldClickShortcut), action: 'Copy field logical name (on label)' },
     { keys: ['Alt', 'A'], action: 'Show all hidden fields' },
     { keys: ['Alt', 'U'], action: 'Unlock all fields' },
     { keys: ['Alt', 'O'], action: 'Toggle Jump to Latest panel' },

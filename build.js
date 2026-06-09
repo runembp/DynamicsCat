@@ -16,7 +16,7 @@ const options = {
     'content/unlock-all-fields': 'src/content/unlock-all-fields/unlock-all-fields.ts',
     'content/dirty-fields': 'src/content/dirty-fields/dirty-fields.ts',
     'content/override-readonly': 'src/content/override-readonly/override-readonly.ts',
-    'content/lookups-opener': 'src/content/lookups-opener/lookups-opener.ts',
+    'content/field-click': 'src/content/field-click/field-click.ts',
     'content/open-on-api':  'src/content/open-on-api/open-on-api.ts',
     'content/jump-to-latest': 'src/content/jump-to-latest/jump-to-latest.ts',
     'content/jump-to-latest-quick': 'src/content/jump-to-latest/jump-to-latest-quick.ts',
