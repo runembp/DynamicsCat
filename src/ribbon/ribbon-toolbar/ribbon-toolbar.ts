@@ -163,10 +163,49 @@ function buildToolbar(): void {
   for (const def of ACTIONS) {
     if (!def.popupBtnId) continue;
     const btn = makeDropdownBtn(def.icon ?? '', def.label);
-    btn.addEventListener('click', () => {
-      dropdown.style.display = 'none';
-      sendAction(def.action);
-    });
+
+    if (def.action === 'changeUserLanguage') {
+      btn.addEventListener('click', (evt) => {
+        evt.stopPropagation();
+        // toggle small language menu inside dropdown
+        const existing = document.getElementById('dynamicscat-lang-menu');
+        if (existing) { existing.remove(); return; }
+        const menu = document.createElement('div');
+        menu.id = 'dynamicscat-lang-menu';
+        menu.style.cssText = 'position: absolute; z-index: 2147483648; background: #fff; border: 1px solid #e0e0e0; padding: 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.12); display: flex; flex-direction: column; gap: 6px;';
+        const languages = [
+          { lcid: 1033, label: 'English' },
+          { lcid: 1030, label: 'Danish' },
+        ];
+        for (const l of languages) {
+          const b = document.createElement('button');
+          b.textContent = l.label;
+          b.style.cssText = 'padding: 6px 10px; background: transparent; border: none; text-align: left; cursor: pointer;';
+          b.addEventListener('click', () => {
+            try {
+              chrome.runtime.sendMessage({ action: def.action, language: l.lcid });
+            } catch {
+              showContextInvalidatedBanner();
+            }
+            dropdown.style.display = 'none';
+            menu.remove();
+          });
+          menu.appendChild(b);
+        }
+        // position menu next to button inside dropdown
+        const rect = btn.getBoundingClientRect();
+        // ensure dropdown is positioned so menu fits; append to dropdown so outsideClickHandler keeps it open
+        dropdown.appendChild(menu);
+        menu.style.top = (rect.top - dropdown.getBoundingClientRect().top + 4) + 'px';
+        menu.style.left = (rect.right - dropdown.getBoundingClientRect().left + 8) + 'px';
+      });
+    } else {
+      btn.addEventListener('click', () => {
+        dropdown.style.display = 'none';
+        sendAction(def.action);
+      });
+    }
+
     if (def.conditional) {
       btn.style.display = 'none';
       (conditionalButtons[def.conditional] ??= []).push(btn);
