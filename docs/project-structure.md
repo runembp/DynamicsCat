@@ -17,6 +17,7 @@ DynamicsCat/
 ├── src/
 │   ├── actions.ts                       ← Action registry (single source of truth for all tools)
 │   ├── background.ts                    ← Service worker: message listener, script dispatcher
+│   ├── user-languages.ts                ← English/Danish LCID helpers and Switch language label builder
 │   ├── popup/
 │   │   ├── popup.html                   ← Popup markup with button IDs
 │   │   ├── popup.css                    ← Popup styles
@@ -52,6 +53,8 @@ DynamicsCat/
 │       │   └── jump-to-latest.css       ← Dialog-scoped styles
 │       ├── activate-activity/
 │       │   └── activate-activity.ts     ← PATCH statecode to reactivate closed activities
+│       ├── change-user-language/
+│       │   └── change-user-language.ts  ← Switch current user language between Danish and English
 │       ├── unlock-all-fields/
 │       │   └── unlock-all-fields.ts     ← Toggle: unlock/re-lock all disabled controls
 │       ├── shortcuts-help/
@@ -67,6 +70,11 @@ DynamicsCat/
 - **Responsibility:** Defines the `ACTIONS` array and `ACTION_MAP` lookup. Every tool in the extension is registered here.
 - **Key files:** Single file. Exports `ActionDef` interface, `ACTIONS` array, `ACTION_MAP` record.
 - **Internal structure:** Flat — one array, one derived map.
+
+### `src/user-languages.ts`
+- **Responsibility:** Defines supported user language LCIDs and builds the Switch language direction label.
+- **Key files:** Single file. Exports English/Danish LCIDs, LCID parsing, opposite-language lookup, and label text.
+- **Internal structure:** Flat helper module used by popup, ribbon, background, and the Switch language content script.
 
 ### `src/popup/`
 - **Responsibility:** Browser-action popup. Renders tool buttons and dispatches actions to the background worker.
@@ -118,6 +126,10 @@ DynamicsCat/
 ### `src/content/activate-activity/`
 - **Responsibility:** Reactivates a closed CRM activity by PATCHing statecode and statuscode via the Web API.
 - **Key files:** `activate-activity.ts`.
+
+### `src/content/change-user-language/`
+- **Responsibility:** Switches the current CRM user's UI language between Danish and English by updating `usersettings.uilanguageid`, then reloads the page.
+- **Key files:** `change-user-language.ts`.
 
 ### `src/content/unlock-all-fields/`
 - **Responsibility:** Toggle script that unlocks all disabled controls on the form via `setDisabled(false)` and re-locks them on the next toggle. Tracks affected field names in cross-frame state.

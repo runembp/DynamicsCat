@@ -1,118 +1,158 @@
-// Content script: change-user-language
-// Runs in MAIN world. Reads LCID from document element dataset (set by background) and updates current user's UserSettings via Xrm.WebApi or direct Web API PATCH.
+import { showToast } from '../shared';
+import { getOtherUserLanguageLcid, parseUserLanguageLcid } from '../../user-languages';
 
-(async () => {
+const LANGUAGE_ATTRIBUTE = 'data-dynamicscat-selected-language';
+const CHANGE_LOCK_KEY = 'DynamicsCat:change-user-language';
+const CHANGE_LOCK_MS = 5_000;
+
+function hasXrmContext(): boolean {
+  return typeof Xrm !== 'undefined'
+    && (
+      typeof Xrm.Utility?.getGlobalContext === 'function'
+      || Boolean(Xrm.Page?.context)
+    );
+}
+
+function getUserId(): string | null {
+  if (typeof Xrm.Utility?.getGlobalContext === 'function') {
+    const userId = Xrm.Utility.getGlobalContext().userSettings?.userId;
+    if (userId) return userId;
+  }
+
+  const pageUserId = Xrm.Page?.context?.getUserId?.();
+  return pageUserId ? String(pageUserId) : null;
+}
+
+function getClientUrl(): string | null {
+  if (typeof Xrm.Utility?.getGlobalContext === 'function') {
+    return Xrm.Utility.getGlobalContext().getClientUrl();
+  }
+
+  return Xrm.Page?.context?.getClientUrl?.() ?? null;
+}
+
+function getCurrentUserLanguage(): number | null {
+  if (typeof Xrm.Utility?.getGlobalContext === 'function') {
+    const languageId = Xrm.Utility.getGlobalContext().userSettings?.languageId;
+    if (typeof languageId === 'number') return languageId;
+  }
+
+  const pageLanguageId = Xrm.Page?.context?.getUserLcid?.();
+  return typeof pageLanguageId === 'number' ? pageLanguageId : null;
+}
+
+function getApiVersions(): string[] {
+  const crmVersion = Xrm.Page?.context?.getVersion?.();
+  if (!crmVersion) return ['v8.2', 'v9.0', 'v9.1', 'v9.2'];
+
+  const major = Number.parseInt(crmVersion.split('.')[0] ?? '', 10);
+  return Number.isInteger(major) && major >= 9
+    ? ['v9.0', 'v9.1', 'v9.2', 'v8.2']
+    : ['v8.2'];
+}
+
+async function readResponseText(response: Response): Promise<string> {
+  const text = await response.text();
+  return text ? ` - ${text.slice(0, 160)}` : '';
+}
+
+async function patchUserSettings(baseUrl: string, userId: string, lcid: number): Promise<string | null> {
+  let lastFailure = 'usersettings endpoint not found';
+
+  for (const version of getApiVersions()) {
+    const url = `${baseUrl.replace(/\/$/, '')}/api/data/${version}/usersettingscollection(${userId})`;
+    const response = await fetch(url, {
+      method: 'PATCH',
+      credentials: 'same-origin',
+      headers: {
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json; charset=utf-8',
+        'If-Match': '*',
+      },
+      body: JSON.stringify({ uilanguageid: lcid }),
+    });
+
+    if (response.ok) return null;
+
+    lastFailure = `${version} returned HTTP ${response.status}${await readResponseText(response)}`;
+    if (response.status !== 404) return lastFailure;
+  }
+
+  return lastFailure;
+}
+
+function acquireChangeLock(lcid: number): boolean {
   try {
-    const raw = (document.documentElement as HTMLElement).dataset?.dynamicscatSelectedLanguage
-      ?? document.documentElement.getAttribute('data-dynamicscat-selected-language');
-    if (!raw) {
-      console.error('[DynamicsCat] No LCID found on document element.');
-      return;
-    }
-    const lcid = parseInt(String(raw), 10);
-    if (!lcid || isNaN(lcid)) {
-      console.error('[DynamicsCat] Invalid LCID:', raw);
-      return;
+    const now = Date.now();
+    const existing = window.sessionStorage.getItem(CHANGE_LOCK_KEY);
+    if (existing) {
+      const [existingLcid, existingTimestamp] = existing.split(':');
+      const timestamp = Number(existingTimestamp);
+      if (existingLcid === String(lcid) && Number.isFinite(timestamp) && now - timestamp < CHANGE_LOCK_MS) {
+        return false;
+      }
     }
 
-    // remove marker
+    window.sessionStorage.setItem(CHANGE_LOCK_KEY, `${lcid}:${now}`);
+  } catch (error) {
+    console.debug('[DynamicsCat] Could not acquire language change lock', error);
+  }
+
+  return true;
+}
+
+async function changeUserLanguage(): Promise<void> {
+  const raw = document.documentElement.getAttribute(LANGUAGE_ATTRIBUTE);
+  document.documentElement.removeAttribute(LANGUAGE_ATTRIBUTE);
+
+  if (!hasXrmContext()) return;
+
+  const currentLcid = parseUserLanguageLcid(raw) ?? parseUserLanguageLcid(getCurrentUserLanguage());
+  if (currentLcid === null) {
+    showToast('Cannot determine current language. Language change aborted.', 'warn');
+    return;
+  }
+
+  const lcid = getOtherUserLanguageLcid(currentLcid);
+  if (!acquireChangeLock(lcid)) return;
+
+  const rawUserId = getUserId();
+  if (!rawUserId) {
+    showToast('Cannot determine current user. Language change aborted.', 'warn');
+    return;
+  }
+
+  const userId = rawUserId.replace(/[{}]/g, '').toLowerCase();
+
+  if (typeof Xrm.WebApi?.updateRecord === 'function') {
     try {
-      const el = document.documentElement as HTMLElement;
-      if (el.dataset && el.dataset.dynamicscatSelectedLanguage !== undefined) {
-        delete (el.dataset as DOMStringMap).dynamicscatSelectedLanguage;
-      }
-    } catch (err) {
-      console.debug('[DynamicsCat] clearing dataset failed', err);
-    }
-
-    function getUserId(): string | null {
-      try {
-        if (typeof Xrm !== 'undefined' && Xrm.Utility && Xrm.Utility.getGlobalContext) {
-          const ctx = Xrm.Utility.getGlobalContext();
-          if (ctx?.userSettings?.userId) return String(ctx.userSettings.userId);
-        }
-        if (typeof Xrm !== 'undefined' && Xrm.Page && Xrm.Page.context && Xrm.Page.context.getUserId) {
-          return String(Xrm.Page.context.getUserId());
-        }
-      } catch (err) {
-        console.debug('[DynamicsCat] getUserId failed', err);
-      }
-      return null;
-    }
-
-    const rawUserId = getUserId();
-    if (!rawUserId) {
-      alert('DynamicsCat: Cannot determine current user. Language change aborted.');
+      await Xrm.WebApi.updateRecord('usersettings', userId, { uilanguageid: lcid });
+      window.location.reload();
       return;
+    } catch (error) {
+      console.debug('[DynamicsCat] Xrm.WebApi.updateRecord failed, falling back to direct Web API', error);
     }
-    const userId = rawUserId.replace(/[{}]/g, '').toLowerCase();
+  }
 
-    // Try Xrm.WebApi.updateRecord when available
-    if (typeof Xrm !== 'undefined' && Xrm.WebApi && typeof Xrm.WebApi.updateRecord === 'function') {
-      try {
-        await Xrm.WebApi.updateRecord('usersettings', userId, { uilanguageid: lcid });
-        window.location.reload();
-        return;
-      } catch (err) {
-        console.debug('[DynamicsCat] Xrm.WebApi.updateRecord failed, falling back to direct Web API', err);
-      }
-    }
+  const clientUrl = getClientUrl();
+  if (!clientUrl) {
+    showToast('Cannot determine CRM URL. Switch language via CRM personal settings.', 'warn');
+    return;
+  }
 
-    // Fallback: issue direct PATCH to Web API endpoint in page context
-    function getClientUrl(): string | null {
-      try {
-        if (typeof Xrm !== 'undefined' && Xrm.Utility && Xrm.Utility.getGlobalContext) {
-          return Xrm.Utility.getGlobalContext().getClientUrl();
-        }
-        if (typeof Xrm !== 'undefined' && Xrm.Page && Xrm.Page.context && Xrm.Page.context.getClientUrl) {
-          return Xrm.Page.context.getClientUrl();
-        }
-      } catch (err) {
-        console.debug('[DynamicsCat] getClientUrl failed', err);
-      }
-      return null;
-    }
-
-    const clientUrl = getClientUrl();
-    if (!clientUrl) {
-      alert('DynamicsCat: Automatic language change not supported in this environment. Change language via CRM personal settings.');
-      return;
-    }
-
-    async function tryPatch(baseUrl: string): Promise<boolean> {
-      const versions = ['v9.2', 'v9.1', 'v9.0', 'v8.2'];
-      for (const ver of versions) {
-        try {
-          const url = `${baseUrl.replace(/\/$/, '')}/api/data/${ver}/usersettingscollection(${userId})`;
-          const res = await fetch(url, {
-            method: 'PATCH',
-            credentials: 'same-origin',
-            headers: {
-              'OData-MaxVersion': '4.0',
-              'OData-Version': '4.0',
-              'Accept': 'application/json',
-              'Content-Type': 'application/json; charset=utf-8',
-              'If-Match': '*',
-            },
-            body: JSON.stringify({ uilanguageid: lcid }),
-          });
-          if (res.status === 204 || res.status === 200) return true;
-          // 404 might mean wrong version or path — try next
-        } catch (err) {
-          console.debug('[DynamicsCat] Web API patch attempt failed for version', ver, err);
-        }
-      }
-      return false;
-    }
-
-    const patched = await tryPatch(clientUrl);
-    if (patched) {
+  try {
+    const failure = await patchUserSettings(clientUrl, userId, lcid);
+    if (failure === null) {
       window.location.reload();
       return;
     }
 
-    alert('DynamicsCat: Failed to change language via Web API. Change language via CRM personal settings.');
-  } catch (e) {
-    console.error('[DynamicsCat] change-user-language error', e);
+    showToast(`Failed to change language: ${failure}`, 'warn');
+  } catch (error) {
+    showToast(`Language change request failed: ${error instanceof Error ? error.message : String(error)}`, 'warn');
   }
-})();
+}
+
+void changeUserLanguage();

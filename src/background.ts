@@ -2,6 +2,7 @@
 // Used by both the extension popup and the CRM ribbon toolbar.
 
 import { ACTION_MAP } from './actions';
+import { parseUserLanguageLcid } from './user-languages';
 
 const DEFAULT_READONLY_SHORTCUT = 'alt';
 const DEFAULT_FIELD_CLICK_SHORTCUT = 'ctrl';
@@ -36,6 +37,30 @@ chrome.runtime.onMessage.addListener(
         sendResponse({ activatable });
       }).catch(() => sendResponse({ activatable: false }));
       return true; // keep message channel open for async sendResponse
+    }
+
+    if (message.action === 'probeUserLanguage') {
+      chrome.scripting.executeScript({
+        target: { tabId, allFrames: true },
+        world: 'MAIN',
+        func: () => {
+          try {
+            if (typeof Xrm === 'undefined') return null;
+            if (typeof Xrm.Utility?.getGlobalContext === 'function') {
+              return Xrm.Utility.getGlobalContext().userSettings?.languageId ?? null;
+            }
+            return Xrm.Page?.context?.getUserLcid?.() ?? null;
+          } catch {
+            return null;
+          }
+        },
+      }).then(results => {
+        const languageId = results
+          .map(result => parseUserLanguageLcid(result.result))
+          .find((lcid): lcid is NonNullable<typeof lcid> => lcid !== null) ?? null;
+        sendResponse({ languageId });
+      }).catch(() => sendResponse({ languageId: null }));
+      return true;
     }
 
     if (message.action === 'injectOverrideReadonly') {
@@ -98,42 +123,15 @@ chrome.runtime.onMessage.addListener(
       return true;
     }
 
-    if (message.action === 'changeUserLanguage') {
-          const config = ACTION_MAP.changeUserLanguage;
-          void (async () => {
-            try {
-              const lang = message.language as number | string;
-              if (!lang) { sendResponse({ ok: false }); return; }
-              const lcid = typeof lang === 'number' ? lang : parseInt(String(lang), 10);
-              await chrome.scripting.executeScript({
-                target: { tabId, allFrames: config.allFrames },
-                world: 'MAIN',
-                func: (lcidValue: number) => { (document.documentElement as HTMLElement).dataset.dynamicscatSelectedLanguage = String(lcidValue); },
-                args: [lcid],
-              });
-              await chrome.scripting.executeScript({
-                target: { tabId, allFrames: config.allFrames },
-                files: [config.file],
-                world: 'MAIN',
-              });
-            } catch {
-              sendResponse({ ok: false });
-              return;
-            }
-            sendResponse({ ok: true });
-          })();
-          return true;
-        }
+    const config = ACTION_MAP[message.action as string];
+    if (!config) return undefined;
 
-        const config = ACTION_MAP[message.action as string];
-        if (!config) return undefined;
-
-        chrome.scripting.executeScript({
-          target: { tabId, allFrames: config.allFrames },
-          files: [config.file],
-          world: 'MAIN',
-        });
-        return undefined;
+    chrome.scripting.executeScript({
+      target: { tabId, allFrames: config.allFrames },
+      files: [config.file],
+      world: 'MAIN',
+    });
+    return undefined;
   },
 );
 

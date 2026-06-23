@@ -24,11 +24,11 @@ No test suite exists. Load the extension from `dist/` in Chrome (`chrome://exten
 
 ## Architecture
 
-The popup (`src/popup/popup.ts`) renders tool buttons and dispatches actions to the background service worker via `chrome.runtime.sendMessage`. The background worker (`src/background.ts`) receives these messages and injects content scripts via `chrome.scripting.executeScript`. For shortcut-based tools (Override Readonly, Lookups Opener), the background worker reads configuration from `chrome.storage.local` and injects it into the page before executing the content script.
+The popup (`src/popup/popup.ts`) renders tool buttons and dispatches actions to the background service worker via `chrome.runtime.sendMessage`. The background worker (`src/background.ts`) receives these messages and injects content scripts via `chrome.scripting.executeScript`. For shortcut-based tools (Override Readonly, Field Click), the background worker reads configuration from `chrome.storage.local` and injects it into the page before executing the content script.
 
 Content scripts live in `src/content/`. They run inside the page and have access to the `Xrm` global exposed by Dynamics CRM. Because CRM forms render inside **iframes**, content scripts that need `Xrm` must be injected with `allFrames: true` and `world: 'MAIN'` (the ISOLATED world cannot see `Xrm`).
 
-`src/background.ts` is the service worker that handles all message-based script injection, the `probeActivatable` conditional visibility check, shortcut configuration injection, `openBackgroundTab` requests from content scripts, and `chrome.commands.onCommand` keyboard shortcut dispatching.
+`src/background.ts` is the service worker that handles all message-based script injection, the `probeActivatable` conditional visibility check, the `probeUserLanguage` label probe, shortcut configuration injection, `openBackgroundTab` requests from content scripts, and `chrome.commands.onCommand` keyboard shortcut dispatching.
 
 ## Build System
 

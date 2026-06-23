@@ -27,3 +27,5 @@ Domain terms used in this codebase.
 | Jump to Latest Quick | Headless (no-panel) variant of Jump to Latest. Reads last-used entity and preferences from localStorage, queries OData directly, and opens the result. Triggered via Alt+Shift+O keyboard shortcut. | `jump-to-latest-quick.ts`, `background.ts` |
 | Shortcut config | User-configurable modifier key combinations (e.g. `alt`, `ctrl+shift`) stored in `chrome.storage.local` and injected into page context via dataset attributes. Used by Override Readonly and Field Click. | `background.ts`, `popup.ts`, `ribbon-toolbar`, `state.ts` |
 | navBar | The CRM masthead navigation bar element (`#navBar`). The ribbon toolbar injects itself as the first child of this element. | `ribbon-toolbar` |
+| LCID | Microsoft locale identifier used by Dynamics user settings. DynamicsCat supports Danish `1030` and English `1033` for Switch language. | `user-languages.ts`, `change-user-language` |
+| usersettings.uilanguageid | Dynamics Web API field updated by Switch language to change the current user's UI language. | `change-user-language` |

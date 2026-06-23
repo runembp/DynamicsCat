@@ -6,6 +6,14 @@ As a bonus, brings a bit (a lot) of cuteness.
 
 <img width="496" height="105" alt="image" src="https://github.com/user-attachments/assets/815b67ba-d275-45bc-b7a6-529393afce4e" />
 
+## Tech Stack
+
+- TypeScript
+- Chrome Extension Manifest V3
+- esbuild
+- ESLint
+- Dynamics CRM `Xrm` client API
+- Dynamics Web API
 
 ## Quickstart (no build required)
 
@@ -30,6 +38,7 @@ Tools are accessible from the Chrome toolbar icon and from a ribbon toolbar that
 - **Open on API** — Open the current record as raw JSON in the Web API
 - **Jump to Latest** — Pick any entity and open its most recently modified or created record
 - **Activate Activity** — Reactivate a closed activity (conditionally shown when statecode ≠ 0)
+- **Switch language** — Switch the current CRM user between Danish (LCID 1030) and English (LCID 1033), with the current switch direction shown on the button
 - **Shortcuts** — Panel listing all keyboard/mouse shortcuts (including Jump to Latest, Quick, Show Hidden Fields and Unlock All Fields), reflecting your configured click-shortcuts
 - **Ribbon Toolbar** — Floating toolbar auto-injected in the CRM nav bar, mirroring all popup tools
 
@@ -95,4 +104,3 @@ npm run check       # typecheck + lint together
 1. Open Chrome and navigate to `chrome://extensions`
 2. Enable **Developer mode** (toggle in the top-right corner)
 3. Click **Load unpacked** and select the `dist/` folder
-

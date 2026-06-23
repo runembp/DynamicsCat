@@ -12,6 +12,9 @@ graph TD
     BG -->|chrome.scripting.executeScript| CS["Content Scripts<br/>(src/content/*)"]
     BG -->|chrome.storage.local| Storage["Extension Storage"]
     Ribbon["Ribbon Toolbar<br/>(src/ribbon/)"] -->|chrome.runtime.sendMessage| BG
+    Popup -->|uses| UserLang["User Language Helpers<br/>(src/user-languages.ts)"]
+    Ribbon -->|uses| UserLang
+    BG -->|uses| UserLang
     Actions["Action Registry<br/>(src/actions.ts)"] -.->|consumed by| Popup
     Actions -.->|consumed by| BG
     Actions -.->|consumed by| Ribbon
@@ -32,8 +35,8 @@ graph TD
 - **Dependents:** Popup, Background Service Worker, Ribbon Toolbar
 
 ### Background Service Worker (`src/background.ts`)
-- **Purpose:** Listens for messages from popup and ribbon, dispatches content scripts via `chrome.scripting.executeScript`. Handles the `probeActivatable` message for conditional action visibility. For shortcut-based tools (Override Readonly, Field Click), reads shortcut configuration from `chrome.storage.local` and injects it as a dataset attribute before executing the content script. Also handles `openBackgroundTab` requests from content scripts. Listens for `chrome.commands.onCommand` to trigger tools via keyboard shortcuts (Jump to Latest, Jump to Latest Quick, Show Hidden Fields, Unlock All Fields).
-- **Dependencies:** Action Registry, `chrome.storage.local`, `chrome.commands`
+- **Purpose:** Listens for messages from popup and ribbon, dispatches content scripts via `chrome.scripting.executeScript`. Handles `probeActivatable` for conditional action visibility and `probeUserLanguage` for Switch language button labels. For shortcut-based tools (Override Readonly, Field Click), reads shortcut configuration from `chrome.storage.local` and injects it as a dataset attribute before executing the content script. Also handles `openBackgroundTab` requests from content scripts. Listens for `chrome.commands.onCommand` to trigger tools via keyboard shortcuts (Jump to Latest, Jump to Latest Quick, Show Hidden Fields, Unlock All Fields).
+- **Dependencies:** Action Registry, user language helpers, `chrome.storage.local`, `chrome.commands`
 - **Dependents:** Popup (indirectly via message passing), Ribbon Toolbar (via message passing), Field Click (via `openBackgroundTab` message)
 
 ### Popup (`src/popup/`)
@@ -109,6 +112,11 @@ graph TD
 ### Activate Activity (`src/content/activate-activity/`)- **Purpose:** Reactivates a closed activity by PATCHing `statecode=0, statuscode=1` via the Web API. Only visible when the current record's statecode is non-zero (conditionally shown via `probeActivatable`).
 - **Dependencies:** Shared Utilities
 - **Dependents:** None
+
+### Switch Language (`src/content/change-user-language/`, `src/user-languages.ts`)
+- **Purpose:** Switches the current CRM user's UI language between Danish (LCID 1030) and English (LCID 1033). The popup and ribbon ask the background worker to probe the current LCID and render the switch direction on the button.
+- **Dependencies:** Shared Utilities, user language helpers, Dynamics user settings, Dynamics Web API
+- **Dependents:** Popup, Ribbon Toolbar, Background Service Worker
 
 ### Unlock All Fields (`src/content/unlock-all-fields/`)
 - **Purpose:** Toggle script that unlocks every disabled control on the form via `setDisabled(false)`, recording the affected field names in cross-frame state. Toggling again re-locks exactly those fields. Triggered from the popup/ribbon or the Alt+U keyboard shortcut.

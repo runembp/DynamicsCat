@@ -5,6 +5,7 @@
 
 import { ACTIONS } from '../../actions';
 import { STATE_KEYS, getSharedDataset, writeFlag } from '../../content/state';
+import { getUserLanguageSwitchLabel } from '../../user-languages';
 
 const TOOLBAR_ID = 'crm-tools-ribbon-toolbar';
 const STYLE_ID   = 'crm-tools-ribbon-style';
@@ -76,6 +77,22 @@ function setButtonActive(btn: HTMLButtonElement, active: boolean): void {
   btn.classList.toggle('crt-active', active);
 }
 
+function setDropdownButtonLabel(btn: HTMLButtonElement, label: string): void {
+  const labelEl = btn.querySelector('.crt-btn-label');
+  if (labelEl) labelEl.textContent = label;
+}
+
+function updateSwitchLanguageLabel(btn: HTMLButtonElement): void {
+  try {
+    chrome.runtime.sendMessage({ action: 'probeUserLanguage' }, (response?: { languageId?: unknown }) => {
+      if (chrome.runtime.lastError) return;
+      setDropdownButtonLabel(btn, getUserLanguageSwitchLabel(response?.languageId));
+    });
+  } catch {
+    showContextInvalidatedBanner();
+  }
+}
+
 function buildToolbar(): void {
   // Idempotent: skip if already injected (e.g. soft navigation without full page unload)
   if (document.getElementById(TOOLBAR_ID)) return;
@@ -136,6 +153,7 @@ function buildToolbar(): void {
     iconEl.className = 'crt-btn-icon';
     iconEl.textContent = icon;
     const labelEl = document.createElement('span');
+    labelEl.className = 'crt-btn-label';
     labelEl.textContent = label;
     const dot = document.createElement('span');
     dot.className = 'crt-btn-active-dot';
@@ -163,48 +181,12 @@ function buildToolbar(): void {
   for (const def of ACTIONS) {
     if (!def.popupBtnId) continue;
     const btn = makeDropdownBtn(def.icon ?? '', def.label);
+    btn.dataset.action = def.action;
 
-    if (def.action === 'changeUserLanguage') {
-      btn.addEventListener('click', (evt) => {
-        evt.stopPropagation();
-        // toggle small language menu inside dropdown
-        const existing = document.getElementById('dynamicscat-lang-menu');
-        if (existing) { existing.remove(); return; }
-        const menu = document.createElement('div');
-        menu.id = 'dynamicscat-lang-menu';
-        menu.style.cssText = 'position: absolute; z-index: 2147483648; background: #fff; border: 1px solid #e0e0e0; padding: 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.12); display: flex; flex-direction: column; gap: 6px;';
-        const languages = [
-          { lcid: 1033, label: 'English' },
-          { lcid: 1030, label: 'Danish' },
-        ];
-        for (const l of languages) {
-          const b = document.createElement('button');
-          b.textContent = l.label;
-          b.style.cssText = 'padding: 6px 10px; background: transparent; border: none; text-align: left; cursor: pointer;';
-          b.addEventListener('click', () => {
-            try {
-              chrome.runtime.sendMessage({ action: def.action, language: l.lcid });
-            } catch {
-              showContextInvalidatedBanner();
-            }
-            dropdown.style.display = 'none';
-            menu.remove();
-          });
-          menu.appendChild(b);
-        }
-        // position menu next to button inside dropdown
-        const rect = btn.getBoundingClientRect();
-        // ensure dropdown is positioned so menu fits; append to dropdown so outsideClickHandler keeps it open
-        dropdown.appendChild(menu);
-        menu.style.top = (rect.top - dropdown.getBoundingClientRect().top + 4) + 'px';
-        menu.style.left = (rect.right - dropdown.getBoundingClientRect().left + 8) + 'px';
-      });
-    } else {
-      btn.addEventListener('click', () => {
-        dropdown.style.display = 'none';
-        sendAction(def.action);
-      });
-    }
+    btn.addEventListener('click', () => {
+      dropdown.style.display = 'none';
+      sendAction(def.action);
+    });
 
     if (def.conditional) {
       btn.style.display = 'none';
@@ -212,6 +194,9 @@ function buildToolbar(): void {
     }
     if (def.action === 'injectDirtyFields') {
       activeButtons[def.action] = btn;
+    }
+    if (def.action === 'changeUserLanguage') {
+      updateSwitchLanguageLabel(btn);
     }
 
     const parent = LEFT_ACTIONS.has(def.action) ? colLeft : colRight;
@@ -238,6 +223,8 @@ function buildToolbar(): void {
       const ds = getSharedDataset();
       const dirtyBtn = activeButtons['injectDirtyFields'];
       if (dirtyBtn) setButtonActive(dirtyBtn, ds[STATE_KEYS.dirtyActive] === '1');
+      const languageBtn = dropdown.querySelector<HTMLButtonElement>('button[data-action="changeUserLanguage"]');
+      if (languageBtn) updateSwitchLanguageLabel(languageBtn);
       dropdown.style.display = 'grid';
     }
   });
