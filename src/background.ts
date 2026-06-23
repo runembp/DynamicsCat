@@ -98,15 +98,42 @@ chrome.runtime.onMessage.addListener(
       return true;
     }
 
-    const config = ACTION_MAP[message.action as string];
-    if (!config) return undefined;
+    if (message.action === 'changeUserLanguage') {
+          const config = ACTION_MAP.changeUserLanguage;
+          void (async () => {
+            try {
+              const lang = message.language as number | string;
+              if (!lang) { sendResponse({ ok: false }); return; }
+              const lcid = typeof lang === 'number' ? lang : parseInt(String(lang), 10);
+              await chrome.scripting.executeScript({
+                target: { tabId, allFrames: config.allFrames },
+                world: 'MAIN',
+                func: (lcidValue: number) => { (document.documentElement as HTMLElement).dataset.dynamicscatSelectedLanguage = String(lcidValue); },
+                args: [lcid],
+              });
+              await chrome.scripting.executeScript({
+                target: { tabId, allFrames: config.allFrames },
+                files: [config.file],
+                world: 'MAIN',
+              });
+            } catch {
+              sendResponse({ ok: false });
+              return;
+            }
+            sendResponse({ ok: true });
+          })();
+          return true;
+        }
 
-    chrome.scripting.executeScript({
-      target: { tabId, allFrames: config.allFrames },
-      files: [config.file],
-      world: 'MAIN',
-    });
-    return undefined;
+        const config = ACTION_MAP[message.action as string];
+        if (!config) return undefined;
+
+        chrome.scripting.executeScript({
+          target: { tabId, allFrames: config.allFrames },
+          files: [config.file],
+          world: 'MAIN',
+        });
+        return undefined;
   },
 );
 

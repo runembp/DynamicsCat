@@ -22,6 +22,7 @@ const options = {
     'content/jump-to-latest-quick': 'src/content/jump-to-latest/jump-to-latest-quick.ts',
     'content/activate-activity': 'src/content/activate-activity/activate-activity.ts',
     'content/prefetch-entities': 'src/content/prefetch-entities/prefetch-entities.ts',
+    'content/change-user-language': 'src/content/change-user-language/change-user-language.ts',
     'content/ribbon-toolbar': 'src/ribbon/ribbon-toolbar/ribbon-toolbar.ts',
   },
   bundle: true,

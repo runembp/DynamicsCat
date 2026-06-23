@@ -53,9 +53,38 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error(`[DynamicsCat] Popup element #${def.popupBtnId} not found`);
       continue;
     }
-    btn.addEventListener('click', () => {
-      sendAction(def.action);
-    });
+
+    if (def.action === 'changeUserLanguage') {
+      btn.addEventListener('click', async () => {
+        const languages = [
+          { lcid: 1033, label: 'English' },
+          { lcid: 1030, label: 'Danish' },
+        ];
+        // remove existing menu if any
+        const existing = document.getElementById('dynamicscat-lang-menu');
+        if (existing) existing.remove();
+        const menu = document.createElement('div');
+        menu.id = 'dynamicscat-lang-menu';
+        menu.className = 'lang-menu';
+        for (const l of languages) {
+          const b = document.createElement('button');
+          b.textContent = l.label;
+          b.className = 'lang-menu-btn';
+          b.addEventListener('click', async () => {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (!tab?.id) return;
+            chrome.runtime.sendMessage({ action: def.action, language: l.lcid, tabId: tab.id });
+            menu.remove();
+          });
+          menu.appendChild(b);
+        }
+        document.body.appendChild(menu);
+      });
+    } else {
+      btn.addEventListener('click', () => {
+        sendAction(def.action);
+      });
+    }
   }
 
   // Conditionally show the Activate button
