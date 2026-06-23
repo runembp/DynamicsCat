@@ -19,3 +19,6 @@ npm-debug.log*
 
 # Local environment config (contains deployment-specific URLs — do not commit)
 crm.config.json
+
+.idea
+.planning
