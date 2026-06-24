@@ -1,15 +1,10 @@
 // Lightweight prefetch script — runs on every CRM page load (MAIN world).
 // Populates localStorage with entity metadata so the "Jump to Latest" panel opens instantly.
 
+import { EntityMeta, fetchEntityDefinitions, getDisplayName, getDynamicsContext } from '../dynamics-context';
+
 const CACHE_KEY = '__dynamicscat_entity_cache';
 const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-
-interface EntityMeta {
-  LogicalName: string;
-  DisplayName: { UserLocalizedLabel: { Label: string } | null } | null;
-  EntitySetName: string;
-  PrimaryIdAttribute: string;
-}
 
 interface EntityCache {
   clientUrl: string;
@@ -29,27 +24,15 @@ function isCacheValid(clientUrl: string): boolean {
   }
 }
 
-function getDisplayName(meta: EntityMeta): string {
-  return meta.DisplayName?.UserLocalizedLabel?.Label ?? meta.LogicalName;
-}
-
 async function prefetch(): Promise<void> {
-  if (typeof Xrm === 'undefined' || !Xrm.Page?.context) return;
+  const context = getDynamicsContext();
+  if (!context) return;
 
-  const clientUrl = Xrm.Page.context.getClientUrl();
+  const clientUrl = context.clientUrl;
   if (isCacheValid(clientUrl)) return;
 
-  const crmVersion = Xrm.Page.context.getVersion();
-  const major = parseInt(crmVersion.split('.')[0] ?? '8', 10);
-  const apiVersion = major >= 9 ? 'v9.0' : 'v8.2';
-
   try {
-    const res = await fetch(
-      `${clientUrl}/api/data/${apiVersion}/EntityDefinitions` +
-      `?$select=LogicalName,DisplayName,EntitySetName,PrimaryIdAttribute`,
-    );
-    const json = await res.json() as { value: EntityMeta[] };
-    const entities = json.value
+    const entities = (await fetchEntityDefinitions(context))
       .filter(e => e.EntitySetName)
       .sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)));
 

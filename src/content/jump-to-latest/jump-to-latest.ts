@@ -1,5 +1,13 @@
 import { showToast } from '../shared';
 import { createPanelShell, isolateKeyboard } from '../panel';
+import {
+  EntityMeta,
+  buildEntityRecordUrl,
+  fetchEntityDefinitions,
+  fetchJsonWithApiFallback,
+  getDisplayName,
+  getDynamicsContext,
+} from '../dynamics-context';
 
 const PANEL_ID   = 'crm-tools-newest-modified-panel';
 const STYLE_ID   = 'crm-tools-newest-modified-style';
@@ -10,13 +18,6 @@ const LAST_SORT_KEY = '__dynamicscat_last_sort';
 const LAST_WITHIN_DAYS_KEY = '__dynamicscat_last_within_days';
 const TTL_MS          = 7 * 24 * 60 * 60 * 1000; // 7 days
 const GUID_RE    = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-interface EntityMeta {
-  LogicalName: string;
-  DisplayName: { UserLocalizedLabel: { Label: string } | null } | null;
-  EntitySetName: string;
-  PrimaryIdAttribute: string;
-}
 
 interface EntityCache {
   clientUrl: string;
@@ -69,15 +70,6 @@ const EXTRA_CSS = `
 #${PANEL_ID} .cnm-open-btn:disabled { opacity: 0.5; cursor: default; }
 `;
 
-function apiVersionFromCrmVersion(crmVersion: string): string {
-  const major = parseInt(crmVersion.split('.')[0] ?? '8', 10);
-  return major >= 9 ? 'v9.0' : 'v8.2';
-}
-
-function getDisplayName(meta: EntityMeta): string {
-  return meta.DisplayName?.UserLocalizedLabel?.Label ?? meta.LogicalName;
-}
-
 function loadCachedEntities(clientUrl: string): EntityMeta[] | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
@@ -99,7 +91,9 @@ function saveCachedEntities(clientUrl: string, entities: EntityMeta[]): void {
 }
 
 async function main(): Promise<void> {
-  if (typeof Xrm === 'undefined' || !Xrm.Page?.context) return;
+  const context = getDynamicsContext();
+  if (!context) return;
+  const dynamicsContext = context;
 
   const shell = createPanelShell({
     panelId: PANEL_ID,
@@ -112,8 +106,7 @@ async function main(): Promise<void> {
 
   const { panel, body } = shell;
 
-  const clientUrl  = Xrm.Page.context.getClientUrl();
-  const apiVersion = apiVersionFromCrmVersion(Xrm.Page.context.getVersion());
+  const clientUrl = dynamicsContext.clientUrl;
 
   // ── Form content ────────────────────────────────────────────────────────────
 
@@ -217,12 +210,7 @@ async function main(): Promise<void> {
       if (cached) { allEntities = cached; return true; }
     }
     try {
-      const res = await fetch(
-        `${clientUrl}/api/data/${apiVersion}/EntityDefinitions` +
-        `?$select=LogicalName,DisplayName,EntitySetName,PrimaryIdAttribute`,
-      );
-      const json = await res.json() as { value: EntityMeta[] };
-      allEntities = json.value
+      allEntities = (await fetchEntityDefinitions(dynamicsContext))
         .filter(e => e.EntitySetName)
         .sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)));
       saveCachedEntities(clientUrl, allEntities);
@@ -306,7 +294,7 @@ async function main(): Promise<void> {
     if (GUID_RE.test(guidValue)) {
       const cleanId = guidValue.replace(/^\{|\}$/g, '');
       window.open(
-        `${clientUrl}/main.aspx?pagetype=entityrecord&etn=${meta.LogicalName}&id=%7B${cleanId}%7D`,
+        buildEntityRecordUrl(dynamicsContext, meta.LogicalName, cleanId),
         '_blank',
       );
       panel.remove();
@@ -323,17 +311,21 @@ async function main(): Promise<void> {
     openBtn.disabled    = true;
     openBtn.textContent = 'Opening…';
     try {
-      const recordUrl = `${clientUrl}/api/data/${apiVersion}/${meta.EntitySetName}` +
-        `?$select=${meta.PrimaryIdAttribute}&$orderby=${sortField}%20desc&$top=1${filterClause}`;
-      console.log('[DynamicsCat] OData query:', recordUrl);
-      const res  = await fetch(recordUrl, {
-        headers: {
-          'Accept': 'application/json',
-          'OData-MaxVersion': '4.0',
-          'OData-Version': '4.0',
+      if (!meta.PrimaryIdAttribute) {
+        showToast('Could not determine primary id field.', 'warn');
+        return;
+      }
+      const { json } = await fetchJsonWithApiFallback<{ value: Record<string, string>[] }>(
+        dynamicsContext,
+        () => `${meta.EntitySetName}?$select=${meta.PrimaryIdAttribute}&$orderby=${sortField}%20desc&$top=1${filterClause}`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'OData-MaxVersion': '4.0',
+            'OData-Version': '4.0',
+          },
         },
-      });
-      const json = await res.json() as { value: Record<string, string>[] };
+      );
 
       if (!json.value?.length) {
         showToast(`No records found for "${getDisplayName(meta)}".`, 'warn');
@@ -345,7 +337,7 @@ async function main(): Promise<void> {
       if (!cleanId) { showToast('Could not determine record ID.', 'warn'); return; }
 
       window.open(
-        `${clientUrl}/main.aspx?pagetype=entityrecord&etn=${meta.LogicalName}&id=%7B${cleanId}%7D`,
+        buildEntityRecordUrl(dynamicsContext, meta.LogicalName, cleanId),
         '_blank',
       );
       panel.remove();

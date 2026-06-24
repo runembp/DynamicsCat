@@ -25,6 +25,7 @@ export const ACTIONS: ActionDef[] = [
   { action: 'jumpToLatestQuick',      file: 'content/jump-to-latest-quick.js', label: 'Jump to Latest (Quick)', icon: '⚡', allFrames: false },
   { action: 'injectUnlockAllFields',  file: 'content/unlock-all-fields.js',   label: 'Unlock All Fields' },
   { action: 'activateActivity',      file: 'content/activate-activity.js',    label: 'Activate',       icon: '🔓', popupBtnId: 'btn-activate-activity', conditional: 'activatable' },
+  { action: 'switchUserLanguage',    file: 'content/change-user-language.js', label: 'Switch Language', icon: '🌐', popupBtnId: 'btn-change-language' },
   { action: 'injectShortcutsHelp',    file: 'content/shortcuts-help.js',      label: 'Shortcuts',      icon: '⌨️', popupBtnId: 'btn-shortcuts-help', allFrames: false },
 ];
 

@@ -38,6 +38,32 @@ chrome.runtime.onMessage.addListener(
       return true; // keep message channel open for async sendResponse
     }
 
+    if (message.action === 'probeUserLanguage') {
+      chrome.scripting.executeScript({
+        target: { tabId, allFrames: true },
+        world: 'MAIN',
+        func: () => {
+          try {
+            if (typeof Xrm !== 'undefined' && Xrm.Utility?.getGlobalContext) {
+              const languageId = Xrm.Utility.getGlobalContext().userSettings?.languageId;
+              if (Number.isInteger(languageId)) return languageId;
+            }
+            if (typeof Xrm !== 'undefined' && Xrm.Page?.context?.getUserLcid) {
+              const languageId = Xrm.Page.context.getUserLcid();
+              if (Number.isInteger(languageId)) return languageId;
+            }
+          } catch {
+            return null;
+          }
+          return null;
+        },
+      }).then(results => {
+        const language = results.find(r => Number.isInteger(r.result))?.result ?? null;
+        sendResponse({ language });
+      }).catch(() => sendResponse({ language: null }));
+      return true;
+    }
+
     if (message.action === 'injectOverrideReadonly') {
       const config = ACTION_MAP.injectOverrideReadonly;
       void (async () => {

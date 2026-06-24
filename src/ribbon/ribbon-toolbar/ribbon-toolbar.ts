@@ -5,6 +5,7 @@
 
 import { ACTIONS } from '../../actions';
 import { STATE_KEYS, getSharedDataset, writeFlag } from '../../content/state';
+import { formatSwitchLanguageLabel } from '../../language';
 
 const TOOLBAR_ID = 'crm-tools-ribbon-toolbar';
 const STYLE_ID   = 'crm-tools-ribbon-style';
@@ -76,6 +77,35 @@ function setButtonActive(btn: HTMLButtonElement, active: boolean): void {
   btn.classList.toggle('crt-active', active);
 }
 
+function readLanguageResponse(response: unknown): number | null {
+  if (typeof response !== 'object' || response === null) return null;
+  const language = (response as Record<string, unknown>).language;
+  return typeof language === 'number' && Number.isInteger(language) ? language : null;
+}
+
+function setSwitchLanguageLabel(btn: HTMLButtonElement, languageId: number | null): void {
+  const label = btn.querySelector<HTMLElement>('.crt-btn-label');
+  if (label) label.textContent = formatSwitchLanguageLabel(languageId);
+}
+
+function updateSwitchLanguageButtons(buttons: HTMLButtonElement[]): void {
+  if (buttons.length === 0) return;
+
+  try {
+    chrome.runtime.sendMessage({ action: 'probeUserLanguage' }, (response: unknown) => {
+      if (chrome.runtime.lastError) {
+        for (const btn of buttons) setSwitchLanguageLabel(btn, null);
+        return;
+      }
+
+      const languageId = readLanguageResponse(response);
+      for (const btn of buttons) setSwitchLanguageLabel(btn, languageId);
+    });
+  } catch {
+    showContextInvalidatedBanner();
+  }
+}
+
 function buildToolbar(): void {
   // Idempotent: skip if already injected (e.g. soft navigation without full page unload)
   if (document.getElementById(TOOLBAR_ID)) return;
@@ -136,6 +166,7 @@ function buildToolbar(): void {
     iconEl.className = 'crt-btn-icon';
     iconEl.textContent = icon;
     const labelEl = document.createElement('span');
+    labelEl.className = 'crt-btn-label';
     labelEl.textContent = label;
     const dot = document.createElement('span');
     dot.className = 'crt-btn-active-dot';
@@ -159,10 +190,14 @@ function buildToolbar(): void {
 
   // Track buttons that show active state
   const activeButtons: Record<string, HTMLButtonElement> = {};
+  const switchLanguageButtons: HTMLButtonElement[] = [];
 
   for (const def of ACTIONS) {
     if (!def.popupBtnId) continue;
     const btn = makeDropdownBtn(def.icon ?? '', def.label);
+    if (def.action === 'switchUserLanguage') {
+      switchLanguageButtons.push(btn);
+    }
     btn.addEventListener('click', () => {
       dropdown.style.display = 'none';
       sendAction(def.action);
@@ -178,6 +213,8 @@ function buildToolbar(): void {
     const parent = LEFT_ACTIONS.has(def.action) ? colLeft : colRight;
     parent.appendChild(btn);
   }
+
+  updateSwitchLanguageButtons(switchLanguageButtons);
 
   dropdown.appendChild(colLeft);
   dropdown.appendChild(colRight);
@@ -199,6 +236,7 @@ function buildToolbar(): void {
       const ds = getSharedDataset();
       const dirtyBtn = activeButtons['injectDirtyFields'];
       if (dirtyBtn) setButtonActive(dirtyBtn, ds[STATE_KEYS.dirtyActive] === '1');
+      updateSwitchLanguageButtons(switchLanguageButtons);
       dropdown.style.display = 'grid';
     }
   });

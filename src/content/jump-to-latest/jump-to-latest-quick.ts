@@ -1,16 +1,16 @@
 import { showToast } from '../shared';
+import {
+  EntityMeta,
+  buildEntityRecordUrl,
+  fetchJsonWithApiFallback,
+  getDisplayName,
+  getDynamicsContext,
+} from '../dynamics-context';
 
 const CACHE_KEY = '__dynamicscat_entity_cache';
 const LAST_ENTITY_KEY = '__dynamicscat_last_entity';
 const LAST_SORT_KEY = '__dynamicscat_last_sort';
 const LAST_WITHIN_DAYS_KEY = '__dynamicscat_last_within_days';
-
-interface EntityMeta {
-  LogicalName: string;
-  DisplayName: { UserLocalizedLabel: { Label: string } | null } | null;
-  EntitySetName: string;
-  PrimaryIdAttribute: string;
-}
 
 interface EntityCache {
   clientUrl: string;
@@ -18,17 +18,9 @@ interface EntityCache {
   timestamp: number;
 }
 
-function apiVersionFromCrmVersion(crmVersion: string): string {
-  const major = parseInt(crmVersion.split('.')[0] ?? '8', 10);
-  return major >= 9 ? 'v9.0' : 'v8.2';
-}
-
-function getDisplayName(meta: EntityMeta): string {
-  return meta.DisplayName?.UserLocalizedLabel?.Label ?? meta.LogicalName;
-}
-
 async function main(): Promise<void> {
-  if (typeof Xrm === 'undefined' || !Xrm.Page?.context) return;
+  const context = getDynamicsContext();
+  if (!context) return;
 
   const lastEntity = localStorage.getItem(LAST_ENTITY_KEY);
   if (!lastEntity) {
@@ -49,6 +41,10 @@ async function main(): Promise<void> {
     showToast('Use Jump to Latest (Alt+O) first.', 'warn');
     return;
   }
+  if (cache.clientUrl !== context.clientUrl) {
+    showToast('Use Jump to Latest (Alt+O) first.', 'warn');
+    return;
+  }
 
   const meta = cache.entities.find((entity) =>
     getDisplayName(entity).toLowerCase() === lastEntity.toLowerCase()
@@ -59,8 +55,6 @@ async function main(): Promise<void> {
     return;
   }
 
-  const clientUrl = Xrm.Page.context.getClientUrl();
-  const apiVersion = apiVersionFromCrmVersion(Xrm.Page.context.getVersion());
   const lastSort = localStorage.getItem(LAST_SORT_KEY);
   const sortField = lastSort === 'createdon' ? 'createdon' : 'modifiedon';
   const withinDaysValue = localStorage.getItem(LAST_WITHIN_DAYS_KEY) ?? '14';
@@ -72,16 +66,21 @@ async function main(): Promise<void> {
   }
 
   try {
-    const recordUrl = `${clientUrl}/api/data/${apiVersion}/${meta.EntitySetName}`
-      + `?$select=${meta.PrimaryIdAttribute}&$orderby=${sortField}%20desc&$top=1${filterClause}`;
-    const response = await fetch(recordUrl, {
-      headers: {
-        'Accept': 'application/json',
-        'OData-MaxVersion': '4.0',
-        'OData-Version': '4.0',
+    if (!meta.PrimaryIdAttribute) {
+      showToast('Could not determine primary id field.', 'warn');
+      return;
+    }
+    const { json } = await fetchJsonWithApiFallback<{ value: Record<string, string>[] }>(
+      context,
+      () => `${meta.EntitySetName}?$select=${meta.PrimaryIdAttribute}&$orderby=${sortField}%20desc&$top=1${filterClause}`,
+      {
+        headers: {
+          'Accept': 'application/json',
+          'OData-MaxVersion': '4.0',
+          'OData-Version': '4.0',
+        },
       },
-    });
-    const json = await response.json() as { value: Record<string, string>[] };
+    );
     if (!json.value?.length) {
       showToast('No records found.', 'warn');
       return;
@@ -95,7 +94,7 @@ async function main(): Promise<void> {
     }
 
     window.open(
-      `${clientUrl}/main.aspx?pagetype=entityrecord&etn=${meta.LogicalName}&id=%7B${cleanId}%7D`,
+      buildEntityRecordUrl(context, meta.LogicalName, cleanId),
       '_blank',
     );
   } catch {

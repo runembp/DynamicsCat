@@ -30,6 +30,7 @@ Tools are accessible from the Chrome toolbar icon and from a ribbon toolbar that
 - **Open on API** — Open the current record as raw JSON in the Web API
 - **Jump to Latest** — Pick any entity and open its most recently modified or created record
 - **Activate Activity** — Reactivate a closed activity (conditionally shown when statecode ≠ 0)
+- **Switch Language** — Switch the current user's UI language; English/Danish toggles by default, other LCIDs can be entered and are remembered per environment
 - **Shortcuts** — Panel listing all keyboard/mouse shortcuts (including Jump to Latest, Quick, Show Hidden Fields and Unlock All Fields), reflecting your configured click-shortcuts
 - **Ribbon Toolbar** — Floating toolbar auto-injected in the CRM nav bar, mirroring all popup tools
 
@@ -95,4 +96,3 @@ npm run check       # typecheck + lint together
 1. Open Chrome and navigate to `chrome://extensions`
 2. Enable **Developer mode** (toggle in the top-right corner)
 3. Click **Load unpacked** and select the `dist/` folder
-

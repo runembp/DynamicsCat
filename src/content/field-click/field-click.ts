@@ -1,5 +1,6 @@
 import { showToast, copyToClipboard } from '../shared';
 import { readFlag, writeFlag, clearFlag } from '../state';
+import { buildEntityRecordUrl, getDynamicsContext } from '../dynamics-context';
 
 declare global {
   interface Window {
@@ -108,7 +109,10 @@ function main(): void {
       e.preventDefault();
       e.stopImmediatePropagation();
 
-      const url = `${window.location.origin}/main.aspx?etn=${encodeURIComponent(match.record.entityType!)}&id=${encodeURIComponent(match.record.id!)}&pagetype=entityrecord`;
+      const context = getDynamicsContext();
+      const url = context
+        ? buildEntityRecordUrl(context, match.record.entityType!, match.record.id!)
+        : `${window.location.origin}/main.aspx?etn=${encodeURIComponent(match.record.entityType!)}&id=${encodeURIComponent(match.record.id!)}&pagetype=entityrecord`;
       (window.top ?? window).postMessage({ type: 'dynamicscat-open-background-tab', url }, '*');
       return;
     }
