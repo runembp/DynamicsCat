@@ -315,17 +315,30 @@ async function main(): Promise<void> {
         showToast('Could not determine primary id field.', 'warn');
         return;
       }
-      const { json } = await fetchJsonWithApiFallback<{ value: Record<string, string>[] }>(
-        dynamicsContext,
-        () => `${meta.EntitySetName}?$select=${meta.PrimaryIdAttribute}&$orderby=${sortField}%20desc&$top=1${filterClause}`,
-        {
-          headers: {
-            'Accept': 'application/json',
-            'OData-MaxVersion': '4.0',
-            'OData-Version': '4.0',
+      const queryTop = async (clause: string) => {
+        const { json } = await fetchJsonWithApiFallback<{ value: Record<string, string>[] }>(
+          dynamicsContext,
+          () => `${meta.EntitySetName}?$select=${meta.PrimaryIdAttribute}&$orderby=${sortField}%20desc&$top=1${clause}`,
+          {
+            headers: {
+              'Accept': 'application/json',
+              'OData-MaxVersion': '4.0',
+              'OData-Version': '4.0',
+            },
           },
-        },
-      );
+        );
+        return json;
+      };
+
+      let json = await queryTop(filterClause);
+
+      // Date window may exclude everything — fall back to all-time before giving up.
+      if (!json.value?.length && filterClause) {
+        json = await queryTop('');
+        if (json.value?.length) {
+          showToast(`No records within last ${withinDays} days — opening newest overall.`, 'warn');
+        }
+      }
 
       if (!json.value?.length) {
         showToast(`No records found for "${getDisplayName(meta)}".`, 'warn');
