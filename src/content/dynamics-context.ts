@@ -189,6 +189,22 @@ export function buildEntityRecordUrl(context: DynamicsContext, logicalName: stri
   return `${context.clientUrl}/main.aspx?pagetype=entityrecord&etn=${encodeURIComponent(logicalName)}&id=%7B${cleanGuid(id)}%7D`;
 }
 
+/**
+ * Escalating date windows (days, null = all time). Avoids a full unsorted table
+ * scan on huge entities by widening gradually instead of jumping to all-time.
+ */
+export function buildSearchWindows(withinDays: number | null): (number | null)[] {
+  if (withinDays === null || Number.isNaN(withinDays)) return [null];
+  const steps = [withinDays, 90, 365].filter(d => d >= withinDays);
+  return [...new Set(steps), null];
+}
+
+export function buildDateFilterClause(sortField: string, days: number | null): string {
+  if (days === null) return '';
+  const since = new Date(Date.now() - days * 86_400_000).toISOString();
+  return `&$filter=${sortField}%20ge%20${since}`;
+}
+
 export function getDisplayName(meta: EntityMeta): string {
   return meta.DisplayName?.UserLocalizedLabel?.Label ?? meta.LogicalName;
 }

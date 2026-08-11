@@ -1,7 +1,9 @@
 import { showToast } from '../shared';
 import {
   EntityMeta,
+  buildDateFilterClause,
   buildEntityRecordUrl,
+  buildSearchWindows,
   fetchJsonWithApiFallback,
   getDisplayName,
   getDynamicsContext,
@@ -59,11 +61,7 @@ async function main(): Promise<void> {
   const sortField = lastSort === 'createdon' ? 'createdon' : 'modifiedon';
   const withinDaysValue = localStorage.getItem(LAST_WITHIN_DAYS_KEY) ?? '14';
   const withinDays = withinDaysValue ? parseInt(withinDaysValue, 10) : null;
-  let filterClause = '';
-  if (withinDays !== null && !Number.isNaN(withinDays)) {
-    const since = new Date(Date.now() - withinDays * 86_400_000).toISOString();
-    filterClause = `&$filter=${sortField}%20ge%20${since}`;
-  }
+  const windows = buildSearchWindows(withinDays);
 
   try {
     if (!meta.PrimaryIdAttribute) {
@@ -85,13 +83,17 @@ async function main(): Promise<void> {
       return json;
     };
 
-    let json = await queryTop(filterClause);
-
-    // Date window may exclude everything — fall back to all-time before giving up.
-    if (!json.value?.length && filterClause) {
-      json = await queryTop('');
+    let json: { value: Record<string, string>[] } = { value: [] };
+    for (const days of windows) {
+      json = await queryTop(buildDateFilterClause(sortField, days));
       if (json.value?.length) {
-        showToast(`No records within last ${withinDays} days — opening newest overall.`, 'warn');
+        if (days !== windows[0]) {
+          showToast(
+            `No records within last ${withinDays} days — opening newest ${days === null ? 'overall' : `within ${days} days`}.`,
+            'warn',
+          );
+        }
+        break;
       }
     }
 

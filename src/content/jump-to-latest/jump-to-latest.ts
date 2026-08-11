@@ -2,7 +2,9 @@ import { showToast } from '../shared';
 import { createPanelShell, isolateKeyboard } from '../panel';
 import {
   EntityMeta,
+  buildDateFilterClause,
   buildEntityRecordUrl,
+  buildSearchWindows,
   fetchEntityDefinitions,
   fetchJsonWithApiFallback,
   getDisplayName,
@@ -302,11 +304,7 @@ async function main(): Promise<void> {
     }
 
     const withinDays = withinInput.value ? parseInt(withinInput.value, 10) : null;
-    let filterClause = '';
-    if (withinDays !== null) {
-      const since = new Date(Date.now() - withinDays * 86_400_000).toISOString();
-      filterClause = `&$filter=${sortField}%20ge%20${since}`;
-    }
+    const windows = buildSearchWindows(withinDays);
 
     openBtn.disabled    = true;
     openBtn.textContent = 'Opening…';
@@ -330,13 +328,17 @@ async function main(): Promise<void> {
         return json;
       };
 
-      let json = await queryTop(filterClause);
-
-      // Date window may exclude everything — fall back to all-time before giving up.
-      if (!json.value?.length && filterClause) {
-        json = await queryTop('');
+      let json: { value: Record<string, string>[] } = { value: [] };
+      for (const days of windows) {
+        json = await queryTop(buildDateFilterClause(sortField, days));
         if (json.value?.length) {
-          showToast(`No records within last ${withinDays} days — opening newest overall.`, 'warn');
+          if (days !== windows[0]) {
+            showToast(
+              `No records within last ${withinDays} days — opening newest ${days === null ? 'overall' : `within ${days} days`}.`,
+              'warn',
+            );
+          }
+          break;
         }
       }
 
