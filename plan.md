@@ -12,3 +12,22 @@
 - [x] Reuse one detected API version across all Web API tools
 - [x] Remove per-request API fallback loops
 - [x] Type-check, lint, and build
+- [x] Add inline editing for supported all-fields values
+- [x] Distinguish form updates from immediate Web API updates
+- [x] Validate typecheck, lint, and production build
+- [x] Hide field editors behind an edit icon
+- [x] Validate compact editor interaction and build
+- [x] Make the All Fields panel resizable
+- [x] Add ascending and descending column sorting
+- [x] Validate resize and sorting build
+- [x] Render All Fields in the top-level CRM document
+- [x] Reduce the default All Fields panel width
+- [x] Validate cross-frame panel behavior and build
+- [x] Center All Fields when opened
+- [x] Validate centered panel build
+- [x] Keep centered All Fields fully inside the viewport
+- [x] Validate viewport-safe panel build
+- [x] Position All Fields from measured top-window dimensions
+- [x] Validate pixel-bounded panel build
+- [x] Increase default All Fields width by 30 percent
+- [x] Validate wider panel build

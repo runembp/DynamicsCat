@@ -25,6 +25,9 @@ export function buildLabelMap(): Record<string, string> {
 }
 
 export function makeDraggable(panel: HTMLElement, handle: HTMLElement, closeBtn: HTMLElement): void {
+  const panelDocument = panel.ownerDocument;
+  const panelWindow = panelDocument.defaultView ?? window;
+
   requestAnimationFrame(() => {
     const rect = panel.getBoundingClientRect();
     panel.style.left      = rect.left + 'px';
@@ -39,8 +42,8 @@ export function makeDraggable(panel: HTMLElement, handle: HTMLElement, closeBtn:
 
   const onMouseMove = (e: MouseEvent) => {
     if (!dragging) return;
-    const x = Math.max(0, Math.min(e.clientX - offsetX, window.innerWidth  - panel.offsetWidth));
-    const y = Math.max(0, Math.min(e.clientY - offsetY, window.innerHeight - panel.offsetHeight));
+    const x = Math.max(0, Math.min(e.clientX - offsetX, panelWindow.innerWidth - panel.offsetWidth));
+    const y = Math.max(0, Math.min(e.clientY - offsetY, panelWindow.innerHeight - panel.offsetHeight));
     panel.style.left = x + 'px';
     panel.style.top  = y + 'px';
   };
@@ -56,16 +59,16 @@ export function makeDraggable(panel: HTMLElement, handle: HTMLElement, closeBtn:
     e.preventDefault();
   });
 
-  document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup',   onMouseUp);
+  panelDocument.addEventListener('mousemove', onMouseMove);
+  panelDocument.addEventListener('mouseup',   onMouseUp);
 
   new MutationObserver((_, obs) => {
-    if (!document.contains(panel)) {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup',   onMouseUp);
+    if (!panelDocument.contains(panel)) {
+      panelDocument.removeEventListener('mousemove', onMouseMove);
+      panelDocument.removeEventListener('mouseup',   onMouseUp);
       obs.disconnect();
     }
-  }).observe(document.body, { childList: true, subtree: true });
+  }).observe(panelDocument.body, { childList: true, subtree: true });
 }
 
 function execCommandCopy(text: string): void {

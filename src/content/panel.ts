@@ -11,6 +11,7 @@ export interface PanelShellConfig {
   styleId: string;
   title: string;
   variant?: 'sidebar' | 'dialog';
+  targetDocument?: Document;
   /** Additional CSS appended after the base panel stylesheet. */
   extraCss?: string;
 }
@@ -32,12 +33,12 @@ export interface SearchBar {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Idempotent style injection — only inserts once per styleId. */
-export function injectStylesheet(styleId: string, css: string): void {
-  if (document.getElementById(styleId)) return;
-  const style = document.createElement('style');
+export function injectStylesheet(styleId: string, css: string, targetDocument = document): void {
+  if (targetDocument.getElementById(styleId)) return;
+  const style = targetDocument.createElement('style');
   style.id = styleId;
   style.textContent = css;
-  (document.head || document.documentElement).appendChild(style);
+  (targetDocument.head || targetDocument.documentElement).appendChild(style);
 }
 
 /** Prevent the CRM host page from swallowing keyboard events inside injected panels. */
@@ -154,24 +155,30 @@ function baseCss(id: string, variant: 'sidebar' | 'dialog'): string {
  * Callers populate the returned `body` element with feature-specific content.
  */
 export function createPanelShell(config: PanelShellConfig): PanelShell | null {
+  const targetDocument = config.targetDocument ?? document;
+
   // Toggle: remove if already present
-  const existing = document.getElementById(config.panelId);
+  const existing = targetDocument.getElementById(config.panelId);
   if (existing) { existing.remove(); return null; }
 
   const variant = config.variant ?? 'sidebar';
-  injectStylesheet(config.styleId, baseCss(config.panelId, variant) + (config.extraCss ?? ''));
+  injectStylesheet(
+    config.styleId,
+    baseCss(config.panelId, variant) + (config.extraCss ?? ''),
+    targetDocument,
+  );
 
-  const panel = document.createElement('div');
+  const panel = targetDocument.createElement('div');
   panel.id = config.panelId;
 
-  const header = document.createElement('div');
+  const header = targetDocument.createElement('div');
   header.className = 'dcat-header';
 
-  const titleEl = document.createElement('span');
+  const titleEl = targetDocument.createElement('span');
   titleEl.className = 'dcat-title';
   titleEl.textContent = config.title;
 
-  const closeBtn = document.createElement('button');
+  const closeBtn = targetDocument.createElement('button');
   closeBtn.className = 'dcat-close';
   closeBtn.title = 'Close';
   closeBtn.textContent = '✕';
@@ -179,11 +186,11 @@ export function createPanelShell(config: PanelShellConfig): PanelShell | null {
 
   header.append(titleEl, closeBtn);
 
-  const body = document.createElement('div');
+  const body = targetDocument.createElement('div');
   body.className = 'dcat-body';
 
   panel.append(header, body);
-  document.body.appendChild(panel);
+  targetDocument.body.appendChild(panel);
   makeDraggable(panel, header, closeBtn);
 
   return { panel, header, closeBtn, body };
