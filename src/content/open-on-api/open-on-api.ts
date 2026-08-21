@@ -1,5 +1,5 @@
 import { showToast } from '../shared';
-import { getApiVersionCandidates, getDynamicsContext, resolveEntitySetName } from '../dynamics-context';
+import { getDynamicsContext, getPreferredApiVersion, resolveEntitySetName } from '../dynamics-context';
 
 async function openOnApi(): Promise<void> {
   // Guard: show toast on non-CRM pages instead of silently doing nothing
@@ -31,7 +31,7 @@ async function openOnApi(): Promise<void> {
 
   // Strip braces from GUID if present
   const cleanId = id.replace(/^\{|\}$/g, '');
-  const apiVersion = getApiVersionCandidates(context.crmVersion)[0];
+  const apiVersion = getPreferredApiVersion(context);
   const url = `${context.clientUrl}/api/data/${apiVersion}/${entitySetName}(${cleanId})`;
   window.open(url, '_blank');
 }

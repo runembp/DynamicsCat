@@ -18,6 +18,8 @@ interface WebApiError {
   body: string;
 }
 
+const API_VERSION_CACHE_PREFIX = 'dynamicscat:api-version:';
+
 interface GlobalContextLike {
   getClientUrl?: () => string;
   getVersion?: () => string;
@@ -101,11 +103,13 @@ export function getApiVersionCandidates(crmVersion: string | null): string[] {
       versions.add('v9.2');
       versions.add('v9.1');
       versions.add('v9.0');
+      return Array.from(versions);
     } else if (major === 8) {
       versions.add(Number.isInteger(minor) ? `v8.${minor}` : 'v8.2');
       versions.add('v8.2');
       versions.add('v8.1');
       versions.add('v8.0');
+      return Array.from(versions);
     }
   }
 
@@ -118,6 +122,43 @@ export function getApiVersionCandidates(crmVersion: string | null): string[] {
   return Array.from(versions);
 }
 
+function getApiVersionCacheKey(context: DynamicsContext): string {
+  return `${API_VERSION_CACHE_PREFIX}${context.clientUrl.toLowerCase()}`;
+}
+
+function getCachedApiVersion(context: DynamicsContext): string | null {
+  try {
+    return localStorage.getItem(getApiVersionCacheKey(context));
+  } catch {
+    return null;
+  }
+}
+
+function cacheApiVersion(context: DynamicsContext, version: string): void {
+  try {
+    localStorage.setItem(getApiVersionCacheKey(context), version);
+  } catch {
+    // Storage can be unavailable in restricted CRM frames.
+  }
+}
+
+function getContextApiVersionCandidates(context: DynamicsContext): string[] {
+  const cached = getCachedApiVersion(context);
+  return cached
+    ? [cached, ...getApiVersionCandidates(context.crmVersion).filter((version) => version !== cached)]
+    : getApiVersionCandidates(context.crmVersion);
+}
+
+function normalizeRequestInit(init?: RequestInit): RequestInit | undefined {
+  return init?.headers
+    ? { ...init, headers: new Headers(init.headers) }
+    : init;
+}
+
+export function getPreferredApiVersion(context: DynamicsContext): string {
+  return getContextApiVersionCandidates(context)[0] ?? 'v8.2';
+}
+
 export async function fetchJsonWithApiFallback<T>(
   context: DynamicsContext,
   pathForVersion: (version: string) => string,
@@ -125,15 +166,16 @@ export async function fetchJsonWithApiFallback<T>(
 ): Promise<{ json: T; version: string }> {
   const errors: WebApiError[] = [];
 
-  for (const version of getApiVersionCandidates(context.crmVersion)) {
+  for (const version of getContextApiVersionCandidates(context)) {
     const url = `${context.clientUrl}/api/data/${version}/${pathForVersion(version)}`;
-    const response = await fetch(url, init);
+    const response = await fetch(url, normalizeRequestInit(init));
     if (response.ok) {
+      cacheApiVersion(context, version);
       return { json: await response.json() as T, version };
     }
 
     errors.push({ version, status: response.status, body: await response.text() });
-    if (response.status !== 404 && response.status !== 400) break;
+    if (response.status !== 404 && response.status !== 501) break;
   }
 
   const last = errors[errors.length - 1];
@@ -149,13 +191,16 @@ export async function sendWithApiFallback(
 ): Promise<{ response: Response; version: string }> {
   const errors: WebApiError[] = [];
 
-  for (const version of getApiVersionCandidates(context.crmVersion)) {
+  for (const version of getContextApiVersionCandidates(context)) {
     const url = `${context.clientUrl}/api/data/${version}/${pathForVersion(version)}`;
-    const response = await fetch(url, init);
-    if (response.ok) return { response, version };
+    const response = await fetch(url, normalizeRequestInit(init));
+    if (response.ok) {
+      cacheApiVersion(context, version);
+      return { response, version };
+    }
 
     errors.push({ version, status: response.status, body: await response.text() });
-    if (response.status !== 404 && response.status !== 400) break;
+    if (response.status !== 404 && response.status !== 501) break;
   }
 
   const last = errors[errors.length - 1];

@@ -1,0 +1,11 @@
+- [x] Inspect current all-fields flow and existing CRM helpers
+- [x] Load all entity attributes instead of form-only controls
+- [x] Build, type-check, and lint
+- [x] Keep metadata fields available when saved-value retrieval fails
+- [x] Retrieve off-form values through readable metadata-based field chunks
+- [x] Fall back from unavailable v9 endpoints to CRM 2016 v8.2
+- [x] Keep valid values when individual CRM attributes reject `$select`
+- [x] Avoid invalid metadata-derived `$select` properties on CRM 2016
+- [x] Detect and cache API version per CRM organization
+- [x] Probe fallback versions only for unavailable endpoints
+- [x] Normalize request headers for CRM 2016's fetch wrapper

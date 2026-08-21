@@ -1,8 +1,13 @@
 // Injected into CRM form frames via chrome.scripting.executeScript.
-// Reads all Xrm attributes and renders a side-panel with a sortable table.
+// Reads entity metadata and renders a side-panel with a sortable table.
 
 import { buildLabelMap } from '../shared';
 import { createPanelShell, createSearchBar, createCopySpan, isolateKeyboard } from '../panel';
+import {
+  fetchJsonWithApiFallback,
+  getDynamicsContext,
+  resolveEntitySetName,
+} from '../dynamics-context';
 
 const PANEL_ID = 'crm-tools-fields-panel';
 const STYLE_ID = 'crm-tools-fields-style';
@@ -42,7 +47,23 @@ const EXTRA_CSS = `
 #${PANEL_ID} .cfp-null { color: #aaa; font-style: italic; }
 `;
 
-function main(): void {
+interface AttributeMetadata {
+  LogicalName: string;
+  SchemaName: string;
+  AttributeType: string | null;
+  AttributeOf: string | null;
+  IsValidForRead: boolean;
+  DisplayName?: { UserLocalizedLabel?: { Label: string } | null } | null;
+}
+
+interface FieldRow {
+  label: string;
+  name: string;
+  type: string;
+  value: string | null;
+}
+
+async function main(): Promise<void> {
   // Xrm is only available in the CRM form iframe — silently skip other frames
   if (typeof Xrm === 'undefined' || !Xrm.Page || !Xrm.Page.ui || !Xrm.Page.data) {
     return;
@@ -114,21 +135,26 @@ function main(): void {
   isolateKeyboard(search.input);
   panel.insertBefore(search.container, body);
 
-  // Initial data
-  const attributes = Xrm.Page.data.entity.attributes.get();
-  const labelMap   = buildLabelMap();
-  populateTbody(tbody, attributes, labelMap);
+  const loadFields = async (): Promise<void> => {
+    const rows = await getAllFields(entityName, entityId);
+    populateTbody(tbody, rows);
+    search.triggerFilter();
+  };
 
   // Refresh handler
   refreshBtn.addEventListener('click', () => {
     refreshBtn.disabled = true;
     refreshBtn.classList.add('cfp-spinning');
     Xrm.Page.data.refresh(false).then(
-      () => {
-        populateTbody(tbody, Xrm.Page.data.entity.attributes.get(), buildLabelMap());
-        search.triggerFilter();
-        refreshBtn.classList.remove('cfp-spinning');
-        refreshBtn.disabled = false;
+      async () => {
+        try {
+          await loadFields();
+        } catch (err) {
+          console.error('[DynamicsCat] Loading all fields failed:', err);
+        } finally {
+          refreshBtn.classList.remove('cfp-spinning');
+          refreshBtn.disabled = false;
+        }
       },
       (err: unknown) => {
         console.error('[DynamicsCat] Refresh failed:', err);
@@ -141,11 +167,78 @@ function main(): void {
   body.appendChild(table);
   body.appendChild(noResults);
 
+  try {
+    await loadFields();
+  } catch (err) {
+    console.error('[DynamicsCat] Loading all fields failed:', err);
+    tbody.innerHTML = '<tr><td colspan="4" class="cfp-error">Could not load entity fields.</td></tr>';
+  }
+
   // Size the panel to fit the table's natural width
   requestAnimationFrame(() => {
     const tableWidth = table.offsetWidth;
     panel.style.width = Math.min(Math.max(tableWidth, 420), window.innerWidth * 0.9) + 'px';
   });
+}
+
+async function getAllFields(entityName: string, entityId: string): Promise<FieldRow[]> {
+  const context = getDynamicsContext();
+  if (!context) throw new Error('Dynamics context is unavailable');
+
+  const { json: metadata } = await fetchJsonWithApiFallback<{ value: AttributeMetadata[] }>(
+    context,
+    () => `EntityDefinitions(LogicalName='${encodeURIComponent(entityName)}')/Attributes`
+      + '?$select=LogicalName,SchemaName,AttributeType,AttributeOf,IsValidForRead,DisplayName',
+  );
+  let record: Record<string, unknown> = {};
+  if (entityId) {
+    try {
+      record = await fetchRecord(entityName, entityId);
+    } catch (err) {
+      console.warn('[DynamicsCat] Saved field values could not be loaded:', err);
+    }
+  }
+
+  const formAttributes = new Map(
+    Xrm.Page.data.entity.attributes.get().map((attr) => [attr.getName(), attr]),
+  );
+  const formLabels = buildLabelMap();
+
+  return metadata.value.map((field) => {
+    const name = field.LogicalName;
+    const formAttribute = formAttributes.get(name);
+    const recordValue = record[name] ?? record[`_${name}_value`];
+    return {
+      label: formLabels[name] || field.DisplayName?.UserLocalizedLabel?.Label || name,
+      name,
+      type: formAttribute?.getAttributeType?.() || field.AttributeType || '—',
+      value: formAttribute ? formatValue(formAttribute) : formatRecordValue(recordValue),
+    };
+  });
+}
+
+async function fetchRecord(
+  entityName: string,
+  entityId: string,
+): Promise<Record<string, unknown>> {
+  const context = getDynamicsContext();
+  if (!context) throw new Error('Dynamics context is unavailable');
+
+  const entitySetName = await resolveEntitySetName(context, entityName);
+  const cleanId = entityId.replace(/[{}]/g, '');
+  const { json } = await fetchJsonWithApiFallback<Record<string, unknown>>(
+    context,
+    () => `${entitySetName}(${cleanId})`,
+    { headers: { Prefer: 'odata.include-annotations="OData.Community.Display.V1.FormattedValue"' } },
+  );
+  return json;
+}
+
+function formatRecordValue(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (value instanceof Date) return value.toLocaleString();
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
 }
 
 function formatValue(attr: Xrm.Attributes.Attribute): string | null {
@@ -181,20 +274,11 @@ function formatValue(attr: Xrm.Attributes.Attribute): string | null {
 
 function populateTbody(
   tbody: HTMLTableSectionElement,
-  attributes: Xrm.Attributes.Attribute[],
-  labelMap: Record<string, string>,
+  fields: FieldRow[],
 ): void {
   tbody.innerHTML = '';
-  const sortedAttrs = [...attributes].sort((a, b) => {
-    const la = (labelMap[a.getName()] || a.getName()).toLowerCase();
-    const lb = (labelMap[b.getName()] || b.getName()).toLowerCase();
-    return la.localeCompare(lb);
-  });
-  sortedAttrs.forEach((attr) => {
-    const name     = attr.getName();
-    const label    = labelMap[name] || name;
-    const type     = attr.getAttributeType ? attr.getAttributeType() : '—';
-    const rawValue = formatValue(attr);
+  const sortedFields = [...fields].sort((a, b) => a.label.localeCompare(b.label));
+  sortedFields.forEach(({ label, name, type, value }) => {
 
     const tr = document.createElement('tr');
 
@@ -211,18 +295,18 @@ function populateTbody(
     tdType.appendChild(typeBadge);
 
     const tdValue = document.createElement('td');
-    if (rawValue === null) {
+    if (value === null) {
       const nullSpan = document.createElement('span');
       nullSpan.className = 'cfp-null';
       nullSpan.textContent = 'null';
       tdValue.appendChild(nullSpan);
     } else {
-      tdValue.textContent = rawValue;
+      tdValue.textContent = value;
     }
 
     tr.dataset.searchLabel  = label.toLowerCase();
     tr.dataset.searchSchema = name.toLowerCase();
-    tr.dataset.searchValue  = (rawValue ?? 'null').toLowerCase();
+    tr.dataset.searchValue  = (value ?? 'null').toLowerCase();
     tr.appendChild(tdLabel);
     tr.appendChild(tdSchema);
     tr.appendChild(tdType);
@@ -231,4 +315,4 @@ function populateTbody(
   });
 }
 
-main();
+void main();
