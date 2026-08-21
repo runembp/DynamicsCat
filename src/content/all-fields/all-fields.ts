@@ -4,7 +4,7 @@
 import { buildLabelMap } from '../shared';
 import { createPanelShell, createSearchBar, createCopySpan, isolateKeyboard } from '../panel';
 import {
-  fetchJsonWithApiFallback,
+  fetchJson,
   getDynamicsContext,
   resolveEntitySetName,
 } from '../dynamics-context';
@@ -185,7 +185,7 @@ async function getAllFields(entityName: string, entityId: string): Promise<Field
   const context = getDynamicsContext();
   if (!context) throw new Error('Dynamics context is unavailable');
 
-  const { json: metadata } = await fetchJsonWithApiFallback<{ value: AttributeMetadata[] }>(
+  const metadata = await fetchJson<{ value: AttributeMetadata[] }>(
     context,
     () => `EntityDefinitions(LogicalName='${encodeURIComponent(entityName)}')/Attributes`
       + '?$select=LogicalName,SchemaName,AttributeType,AttributeOf,IsValidForRead,DisplayName',
@@ -226,12 +226,11 @@ async function fetchRecord(
 
   const entitySetName = await resolveEntitySetName(context, entityName);
   const cleanId = entityId.replace(/[{}]/g, '');
-  const { json } = await fetchJsonWithApiFallback<Record<string, unknown>>(
+  return await fetchJson<Record<string, unknown>>(
     context,
     () => `${entitySetName}(${cleanId})`,
     { headers: { Prefer: 'odata.include-annotations="OData.Community.Display.V1.FormattedValue"' } },
   );
-  return json;
 }
 
 function formatRecordValue(value: unknown): string | null {

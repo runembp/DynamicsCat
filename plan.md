@@ -9,3 +9,6 @@
 - [x] Detect and cache API version per CRM organization
 - [x] Probe fallback versions only for unavailable endpoints
 - [x] Normalize request headers for CRM 2016's fetch wrapper
+- [x] Reuse one detected API version across all Web API tools
+- [x] Remove per-request API fallback loops
+- [x] Type-check, lint, and build

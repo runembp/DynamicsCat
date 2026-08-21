@@ -4,7 +4,7 @@ import {
   buildDateFilterClause,
   buildEntityRecordUrl,
   buildSearchWindows,
-  fetchJsonWithApiFallback,
+  fetchJson,
   getDisplayName,
   getDynamicsContext,
 } from '../dynamics-context';
@@ -69,7 +69,7 @@ async function main(): Promise<void> {
       return;
     }
     const queryTop = async (clause: string) => {
-      const { json } = await fetchJsonWithApiFallback<{ value: Record<string, string>[] }>(
+      return await fetchJson<{ value: Record<string, string>[] }>(
         context,
         () => `${meta.EntitySetName}?$select=${meta.PrimaryIdAttribute}&$orderby=${sortField}%20desc&$top=1${clause}`,
         {
@@ -80,7 +80,6 @@ async function main(): Promise<void> {
           },
         },
       );
-      return json;
     };
 
     let json: { value: Record<string, string>[] } = { value: [] };

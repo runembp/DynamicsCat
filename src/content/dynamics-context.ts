@@ -12,13 +12,8 @@ export interface EntityMeta {
   PrimaryIdAttribute?: string;
 }
 
-interface WebApiError {
-  version: string;
-  status: number;
-  body: string;
-}
-
 const API_VERSION_CACHE_PREFIX = 'dynamicscat:api-version:';
+const apiVersionPromises = new Map<string, Promise<string>>();
 
 interface GlobalContextLike {
   getClientUrl?: () => string;
@@ -142,71 +137,74 @@ function cacheApiVersion(context: DynamicsContext, version: string): void {
   }
 }
 
-function getContextApiVersionCandidates(context: DynamicsContext): string[] {
-  const cached = getCachedApiVersion(context);
-  return cached
-    ? [cached, ...getApiVersionCandidates(context.crmVersion).filter((version) => version !== cached)]
-    : getApiVersionCandidates(context.crmVersion);
-}
-
 function normalizeRequestInit(init?: RequestInit): RequestInit | undefined {
   return init?.headers
     ? { ...init, headers: new Headers(init.headers) }
     : init;
 }
 
-export function getPreferredApiVersion(context: DynamicsContext): string {
-  return getContextApiVersionCandidates(context)[0] ?? 'v8.2';
+async function scanApiVersion(context: DynamicsContext): Promise<string> {
+  for (const version of getApiVersionCandidates(context.crmVersion)) {
+    const response = await fetch(`${context.clientUrl}/api/data/${version}/`, {
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' },
+    });
+    if (response.ok) {
+      cacheApiVersion(context, version);
+      return version;
+    }
+    if (response.status !== 404 && response.status !== 501) {
+      throw new Error(`Web API scan failed (${version}, HTTP ${response.status})`);
+    }
+  }
+  throw new Error('No supported Dynamics Web API version found');
 }
 
-export async function fetchJsonWithApiFallback<T>(
+export function getApiVersion(context: DynamicsContext): Promise<string> {
+  const cached = getCachedApiVersion(context);
+  if (cached) return Promise.resolve(cached);
+
+  const key = context.clientUrl.toLowerCase();
+  const existing = apiVersionPromises.get(key);
+  if (existing) return existing;
+
+  const detection = scanApiVersion(context).finally(() => apiVersionPromises.delete(key));
+  apiVersionPromises.set(key, detection);
+  return detection;
+}
+
+export async function fetchJson<T>(
   context: DynamicsContext,
   pathForVersion: (version: string) => string,
   init?: RequestInit,
-): Promise<{ json: T; version: string }> {
-  const errors: WebApiError[] = [];
-
-  for (const version of getContextApiVersionCandidates(context)) {
-    const url = `${context.clientUrl}/api/data/${version}/${pathForVersion(version)}`;
-    const response = await fetch(url, normalizeRequestInit(init));
-    if (response.ok) {
-      cacheApiVersion(context, version);
-      return { json: await response.json() as T, version };
-    }
-
-    errors.push({ version, status: response.status, body: await response.text() });
-    if (response.status !== 404 && response.status !== 501) break;
+): Promise<T> {
+  const version = await getApiVersion(context);
+  const response = await fetch(
+    `${context.clientUrl}/api/data/${version}/${pathForVersion(version)}`,
+    normalizeRequestInit(init),
+  );
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Web API failed (${version}, HTTP ${response.status}): ${body.slice(0, 160)}`);
   }
-
-  const last = errors[errors.length - 1];
-  throw new Error(last
-    ? `Web API failed (${last.version}, HTTP ${last.status}): ${last.body.slice(0, 160)}`
-    : 'Web API failed before receiving a response');
+  return await response.json() as T;
 }
 
-export async function sendWithApiFallback(
+export async function send(
   context: DynamicsContext,
   pathForVersion: (version: string) => string,
   init: RequestInit,
-): Promise<{ response: Response; version: string }> {
-  const errors: WebApiError[] = [];
-
-  for (const version of getContextApiVersionCandidates(context)) {
-    const url = `${context.clientUrl}/api/data/${version}/${pathForVersion(version)}`;
-    const response = await fetch(url, normalizeRequestInit(init));
-    if (response.ok) {
-      cacheApiVersion(context, version);
-      return { response, version };
-    }
-
-    errors.push({ version, status: response.status, body: await response.text() });
-    if (response.status !== 404 && response.status !== 501) break;
+): Promise<Response> {
+  const version = await getApiVersion(context);
+  const response = await fetch(
+    `${context.clientUrl}/api/data/${version}/${pathForVersion(version)}`,
+    normalizeRequestInit(init),
+  );
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Web API failed (${version}, HTTP ${response.status}): ${body.slice(0, 160)}`);
   }
-
-  const last = errors[errors.length - 1];
-  throw new Error(last
-    ? `Web API failed (${last.version}, HTTP ${last.status}): ${last.body.slice(0, 160)}`
-    : 'Web API failed before receiving a response');
+  return response;
 }
 
 export async function resolveEntitySetName(context: DynamicsContext, entityName: string): Promise<string> {
@@ -215,19 +213,19 @@ export async function resolveEntitySetName(context: DynamicsContext, entityName:
     if (meta.EntitySetName) return meta.EntitySetName;
   }
 
-  const result = await fetchJsonWithApiFallback<{ EntitySetName: string }>(
+  const result = await fetchJson<{ EntitySetName: string }>(
     context,
     () => `EntityDefinitions(LogicalName='${encodeURIComponent(entityName)}')?$select=EntitySetName`,
   );
-  return result.json.EntitySetName;
+  return result.EntitySetName;
 }
 
 export async function fetchEntityDefinitions(context: DynamicsContext): Promise<EntityMeta[]> {
-  const result = await fetchJsonWithApiFallback<{ value: EntityMeta[] }>(
+  const result = await fetchJson<{ value: EntityMeta[] }>(
     context,
     () => 'EntityDefinitions?$select=LogicalName,DisplayName,EntitySetName,PrimaryIdAttribute',
   );
-  return result.json.value;
+  return result.value;
 }
 
 export function buildEntityRecordUrl(context: DynamicsContext, logicalName: string, id: string): string {
@@ -262,7 +260,7 @@ export async function updateUserLanguage(context: DynamicsContext, languageId: n
     return;
   }
 
-  await sendWithApiFallback(
+  await send(
     context,
     () => `usersettingscollection(${context.userId})`,
     {

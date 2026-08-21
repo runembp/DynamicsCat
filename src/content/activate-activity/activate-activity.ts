@@ -1,5 +1,5 @@
 import { showToast } from '../shared';
-import { getDynamicsContext, resolveEntitySetName, sendWithApiFallback } from '../dynamics-context';
+import { getDynamicsContext, resolveEntitySetName, send } from '../dynamics-context';
 
 async function activateActivity(): Promise<void> {
   // Silently bail in frames where Xrm is not available — the script runs in all frames
@@ -38,7 +38,7 @@ async function activateActivity(): Promise<void> {
 
   // PATCH statecode=0, statuscode=1 to reactivate
   try {
-    await sendWithApiFallback(
+    await send(
       context,
       () => `${entitySetName}(${id})`,
       {
